@@ -34,6 +34,7 @@ import {
   launchApp,
   makeShotDir,
   REPO_ROOT,
+  resizeAppWindow,
   seedSettings,
   shot,
   sleep,
@@ -59,6 +60,7 @@ async function main() {
 
   seedSettings(FIXTURE);
   const appProc = launchApp(CDP_PORT);
+  await resizeAppWindow(appProc.pid);
 
   let cdp;
   try {
@@ -173,8 +175,12 @@ async function main() {
 
     // ---- navigation: client-side route change stays instrumented -------------
     // Inspect mode is still on — its clicks are suppressed, so leave it
-    // before driving a real navigation.
+    // before driving a real navigation. The toggle races the bridge's
+    // listener teardown, so wait until the preview reports inspect off.
     await appPage.locator("button", { hasText: "Stop Inspecting" }).click();
+    await devPage.waitForFunction(() => window.__ROOTRAY_RUNTIME__?.isInspecting?.() === false, {
+      timeout: 15_000,
+    });
     await devPage.locator("a", { hasText: "About" }).click();
     await devPage.locator("h1", { hasText: "About RootRay" }).waitFor({ timeout: 30_000 });
     assert.equal(

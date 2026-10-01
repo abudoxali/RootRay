@@ -15,6 +15,7 @@ import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
+import { killTree } from "./harness";
 import { stubTauri } from "./stub";
 
 test.setTimeout(120_000);
@@ -232,6 +233,15 @@ test.beforeAll(async () => {
     !existsSync(join(DESKTOP, "dist", "index.html")),
     "apps/desktop/dist missing — run `pnpm --filter @rootray/desktop build` first",
   );
+  /* A stale vite preview from an earlier run would serve the OLD dist
+     bundle while the new spawn dies on strictPort - fail fast instead of
+     silently testing stale assets. */
+  const occupied = await fetch(URL)
+    .then((r) => r.ok)
+    .catch(() => false);
+  if (occupied) {
+    throw new Error(`vite preview port ${PORT} already in use - stale server`);
+  }
   server = spawn("pnpm", ["exec", "vite", "preview", "--port", String(PORT), "--strictPort"], {
     cwd: DESKTOP,
     shell: true,
@@ -239,6 +249,7 @@ test.beforeAll(async () => {
   });
   const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
+    if (server && server.exitCode !== null) break; /* strictPort refused */
     try {
       const res = await fetch(URL);
       if (res.ok) return;
@@ -247,11 +258,15 @@ test.beforeAll(async () => {
     }
     await new Promise((r) => setTimeout(r, 250));
   }
-  throw new Error("vite preview did not start");
+  throw new Error(
+    server && server.exitCode !== null
+      ? `vite preview exited code ${server.exitCode} - port already in use`
+      : "vite preview did not start",
+  );
 });
 
 test.afterAll(() => {
-  server?.kill();
+  killTree(server);
 });
 
 // ---- specs ------------------------------------------------------------------
@@ -485,6 +500,10 @@ test("workbench: Explorer collapses and restores with its state intact", async (
 });
 
 test("workbench: Inspector hides without losing the current selection", async ({ page }) => {
+  // Wide enough for Explorer + Inspector + Preview/Code minimums — the
+  // responsive auto-hide (covered below) must not interfere with a plain
+  // toggle round-trip.
+  await page.setViewportSize({ width: 1_600, height: 900 });
   await goLive(page);
   await emitInspector(page, selection("src/App.tsx", 12));
   await expect(page.locator(".sel-file")).toHaveText("src/App.tsx");
@@ -499,6 +518,33 @@ test("workbench: Inspector hides without losing the current selection", async ({
   await toggle.click();
   await expect(inspector).toBeVisible();
   await expect(page.locator(".sel-file")).toHaveText("src/App.tsx");
+});
+
+test("workbench: toggling an auto-hidden pane keeps the preference and explains", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1_000, height: 700 });
+  await goLive(page);
+  await page.getByRole("tab", { name: "Split" }).click();
+
+  const inspector = page.locator(".wb-right");
+  const toggle = page.getByRole("button", { name: /toggle inspector/i });
+
+  // The responsive policy hid the Inspector so Preview + Code keep their
+  // minimums — the user preference is still "on".
+  await expect(inspector).not.toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+
+  // The toggle looks "off" while auto-hidden; a click must explain rather
+  // than silently destroy the preserved preference.
+  await toggle.click();
+  await expect(page.locator(".notice")).toContainText("hidden");
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await expect(inspector).not.toBeVisible();
+
+  // Widening restores the pane — the preference survived.
+  await page.setViewportSize({ width: 1_600, height: 900 });
+  await expect(inspector).toBeVisible();
 });
 
 test("workbench: Output collapses to a bar, keeps logs, resizes vertically", async ({ page }) => {

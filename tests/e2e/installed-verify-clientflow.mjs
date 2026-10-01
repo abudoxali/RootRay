@@ -38,6 +38,7 @@ import {
   killApp,
   launchApp,
   makeShotDir,
+  resizeAppWindow,
   seedSettings,
   shot,
   sleep,
@@ -45,7 +46,7 @@ import {
   waitText,
 } from "./installed-preview.mjs";
 
-const PROJECT = process.argv[2] ?? "C:\\Users\\Abud\\Desktop\\git hub\\ClientFlow-CRM";
+const PROJECT = process.argv[2] ?? "C:\\Users\\Abud\\Desktop\\GitHub\\ClientFlow CRM";
 const SHOTS = makeShotDir("installed-verify-clientflow");
 const CDP_PORT = 9234;
 
@@ -255,6 +256,7 @@ async function main() {
 
   seedSettings(PROJECT);
   const appProc = launchApp(CDP_PORT);
+  await resizeAppWindow(appProc.pid);
   appProc.on("exit", (code, signal) => {
     console.log(`installed app exited: code=${code ?? "null"} signal=${signal ?? "none"}`);
   });

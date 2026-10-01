@@ -25,11 +25,13 @@ import {
   attachPreview,
   attachUI,
   CFG_DIR,
+  closePixelBrowser,
   EXE,
   existsSync,
   killApp,
   launchApp,
   makeShotDir,
+  pixelSignature,
   REPO_ROOT,
   seedSettings,
   shot,
@@ -37,7 +39,7 @@ import {
   until,
 } from "./installed-preview.mjs";
 
-const PROJECT = "C:\\Users\\Abud\\Desktop\\git hub\\ClientFlow-CRM";
+const PROJECT = process.argv[2] ?? "C:\\Users\\Abud\\Desktop\\GitHub\\ClientFlow CRM";
 const MEDIA = join(REPO_ROOT, "docs", "media");
 const SHOTS = makeShotDir("installed-verify-brand");
 const CDP_PORT = 9236;
@@ -61,14 +63,7 @@ async function main() {
       `[System.Drawing.Icon]::ExtractAssociatedIcon('${EXE}').ToBitmap().Save('${iconPng}')"`,
   );
   assert.ok(existsSync(iconPng), "exe icon extraction failed");
-  const px = execSync(
-    `python -c "from PIL import Image; im=Image.open(r'${iconPng}').convert('RGB'); ` +
-      `d=list(im.getdata()); ` +
-      `print(sum(1 for r,g,b in d if r>120 and g>120 and b>120), ` +
-      `sum(1 for r,g,b in d if r>200 and 60<g<160 and b<80))"`,
-    { encoding: "utf8" },
-  ).trim();
-  const [white, orange] = px.split(" ").map(Number);
+  const [white, orange] = await pixelSignature(iconPng);
   assert.ok(white > 15, `exe icon has too few robot-white pixels (${white}) — stale icon?`);
   assert.ok(orange > 5, `exe icon missing orange accents (${orange})`);
   console.log(`  ok  exe icon is the mascot (white=${white} orange=${orange})`);
@@ -90,14 +85,7 @@ async function main() {
       `powershell -NoProfile -Command "Add-Type -AssemblyName System.Drawing; ` +
         `[System.Drawing.Icon]::ExtractAssociatedIcon('${lnk}').ToBitmap().Save('${lnkPng}')"`,
     );
-    const lpx = execSync(
-      `python -c "from PIL import Image; im=Image.open(r'${lnkPng}').convert('RGB'); ` +
-        `d=list(im.getdata()); ` +
-        `print(sum(1 for r,g,b in d if r>120 and g>120 and b>120), ` +
-        `sum(1 for r,g,b in d if r>200 and 60<g<160 and b<80))"`,
-      { encoding: "utf8" },
-    ).trim();
-    const [lw, lo] = lpx.split(" ").map(Number);
+    const [lw, lo] = await pixelSignature(lnkPng);
     assert.ok(lw > 15, `Start Menu icon not the robot (white=${lw}) — stale icon cache?`);
     assert.ok(lo > 5, `Start Menu icon missing orange (${lo})`);
     console.log(`  ok  Start Menu shortcut icon is the robot (white=${lw} orange=${lo})`);
@@ -205,14 +193,11 @@ async function main() {
       `powershell -NoProfile -ExecutionPolicy Bypass -File "${join(REPO_ROOT, "tests", "e2e", "capture-window.ps1")}" ` +
         `-ProcId ${appProc2.pid} -Out "${winPng}"`,
     );
-    const tb = execSync(
-      `python -c "from PIL import Image; im=Image.open(r'${winPng}').convert('RGB'); ` +
-        `crop=im.crop((8,6,42,36)); d=list(crop.getdata()); ` +
-        `print(sum(1 for r,g,b in d if r>120 and g>120 and b>120), ` +
-        `sum(1 for r,g,b in d if r>150 and 40<g<170 and b<90))"`,
-      { encoding: "utf8" },
-    ).trim();
-    const [twhite, torange] = tb.split(" ").map(Number);
+    const [twhite, torange] = await pixelSignature(
+      winPng,
+      { x: 8, y: 6, w: 34, h: 30 },
+      [150, 40, 170, 90],
+    );
     assert.ok(twhite > 10, `title-bar icon lacks robot-white pixels (${twhite}) — ring mark?`);
     assert.ok(torange > 3, `title-bar icon lacks orange accents (${torange})`);
     console.log(`  ok  title-bar icon is the robot (white=${twhite} orange=${torange})`);
@@ -246,15 +231,11 @@ async function main() {
     ).trim();
     assert.notEqual(tbRect, "NOTFOUND", "RootRay taskbar button not found via UI Automation");
     const [bx, by, bw, bh] = tbRect.split(",").map(Number);
-    const tbSig = execSync(
-      `python -c "from PIL import Image; im=Image.open(r'${taskPng}').convert('RGB'); ` +
-        `w,h=im.size; x=max(0,${bx}-8); y=max(0,${by}-4); ` +
-        `d=list(im.crop((x,y,min(w,x+${bw}+16),min(h,y+${bh}+8))).getdata()); ` +
-        `print(sum(1 for r,g,b in d if r>120 and g>120 and b>120), ` +
-        `sum(1 for r,g,b in d if r>150 and 40<g<170 and b<90))"`,
-      { encoding: "utf8" },
-    ).trim();
-    const [kwhite, korange] = tbSig.split(" ").map(Number);
+    const [kwhite, korange] = await pixelSignature(
+      taskPng,
+      { x: Math.max(0, bx - 8), y: Math.max(0, by - 4), w: bw + 16, h: bh + 8 },
+      [150, 40, 170, 90],
+    );
     assert.ok(
       kwhite > 5,
       `RootRay taskbar icon lacks robot-white (${kwhite}) — stale ring in icon cache?`,
@@ -342,7 +323,9 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  console.error(`\nINSTALLED BRAND VERIFICATION: FAIL — ${e.message}`);
-  process.exit(1);
-});
+main()
+  .catch((e) => {
+    console.error(`\nINSTALLED BRAND VERIFICATION: FAIL — ${e.message}`);
+    process.exitCode = 1;
+  })
+  .finally(() => closePixelBrowser());

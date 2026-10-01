@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: ".",
   testMatch: "*.spec.ts",
   timeout: 300_000,
-  globalTimeout: 600_000,
+  globalTimeout: 1_800_000,
   expect: { timeout: 15_000 },
   workers: 1,
   retries: process.env.CI ? 1 : 0,

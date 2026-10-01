@@ -35,6 +35,7 @@ import {
   launchApp,
   makeShotDir,
   REPO_ROOT,
+  resizeAppWindow,
   seedSettings,
   shot,
   sleep,
@@ -60,6 +61,7 @@ async function main() {
   assert.ok(existsSync(EXE), `installed exe missing: ${EXE}`);
   seedSettings(FIXTURE);
   const appProc = launchApp(CDP_PORT);
+  await resizeAppWindow(appProc.pid);
 
   let cdp;
   try {

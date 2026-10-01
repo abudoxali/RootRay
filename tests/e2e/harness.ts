@@ -238,6 +238,29 @@ export function npm(args: string, cwd: string): void {
   execSync(`npm ${args}`, { cwd, stdio: "pipe" });
 }
 
+/**
+ * Kills a spawned process AND its children. Specs spawn `vite preview`
+ * via `shell: true`, where `child.kill()` only terminates the wrapper —
+ * the real server keeps the port bound and serves the next run a stale
+ * bundle. `taskkill /T` walks the whole tree on Windows.
+ */
+export function killTree(child: ChildProcess | undefined): void {
+  if (!child?.pid) return;
+  if (process.platform === "win32") {
+    try {
+      execSync(`taskkill /F /T /PID ${child.pid}`, { stdio: "pipe" });
+    } catch {
+      /* already gone */
+    }
+    return;
+  }
+  try {
+    child.kill("SIGKILL");
+  } catch {
+    /* already gone */
+  }
+}
+
 export function waitForRunnerUrl(child: ChildProcess): Promise<string> {
   return new Promise((resolvePromise, rejectPromise) => {
     let out = "";

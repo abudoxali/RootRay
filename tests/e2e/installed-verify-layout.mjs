@@ -32,6 +32,7 @@ import {
   launchApp,
   makeShotDir,
   REPO_ROOT,
+  resizeAppWindow,
   seedSettings,
   shot,
   sleep,
@@ -39,7 +40,7 @@ import {
   waitText,
 } from "./installed-preview.mjs";
 
-const PROJECT = process.argv[2] ?? "C:\\Users\\Abud\\Desktop\\git hub\\ClientFlow-CRM";
+const PROJECT = process.argv[2] ?? "C:\\Users\\Abud\\Desktop\\GitHub\\ClientFlow CRM";
 const CHANGE_TARGET = join(REPO_ROOT, "fixtures", "static-web");
 const SHOTS = makeShotDir("installed-verify-layout");
 const CDP_PORT = 9235;
@@ -86,6 +87,7 @@ async function main() {
   const gitBefore = gitPorcelain();
   seedSettings(PROJECT);
   const appProc = launchApp(CDP_PORT);
+  await resizeAppWindow(appProc.pid);
 
   let cdp;
   try {

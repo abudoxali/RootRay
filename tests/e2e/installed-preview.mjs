@@ -11,7 +11,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync, execSync, spawn } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
@@ -114,12 +114,22 @@ export async function attachUI(cdp, timeoutMs = 45_000) {
   while (Date.now() < deadline) {
     for (const p of allPages(cdp)) {
       const url = p.url();
-      if (url.includes("tauri.localhost") || url.startsWith("tauri:")) return p;
+      const isUi =
+        url.includes("tauri.localhost") ||
+        url.startsWith("tauri:") ||
+        (await p.title().catch(() => "")) === "RootRay";
+      if (!isUi) continue;
+      // The installed WebView2 profile persists localStorage between runs —
+      // a previous verification can leave panes hidden and poison later DOM
+      // assertions. Reset UI prefs once on attach, then reload so the app
+      // re-reads the documented defaults. Settings on disk are untouched.
       try {
-        if ((await p.title()) === "RootRay") return p;
+        await p.evaluate(() => globalThis.localStorage?.clear());
+        await p.reload();
       } catch {
-        /* target mid-teardown */
+        /* page may be mid-navigation; the app still boots with stale prefs */
       }
+      return p;
     }
     await sleep(500);
   }
@@ -184,6 +194,86 @@ export async function assertPreviewHasNoIpc(previewPage) {
     );
   }
   console.log(`  ok  preview IPC present but every command denied: ${JSON.stringify(probe)}`);
+}
+
+/**
+ * Resizes the installed app's native window via Win32 SetWindowPos —
+ * WebView2 tracks the HWND, so the React layout sees the new size and
+ * responsive auto-hides recompute. Assertions that require ALL panes
+ * during Split (e.g. `.boxmodel` visible while the editor is open) need
+ * a window wider than the 1120px default, where the Inspector is
+ * *correctly* auto-hidden.
+ */
+export async function resizeAppWindow(pid, width = 1600, height = 1000) {
+  const ps = [
+    `Add-Type -Name U32 -Namespace W -MemberDefinition '[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool SetWindowPos(System.IntPtr h, System.IntPtr a, int x, int y, int cx, int cy, uint f);'`,
+    `$p = Get-Process -Id ${pid} -ErrorAction SilentlyContinue`,
+    `if (-not $p -or $p.MainWindowHandle -eq 0) { exit 3 }`,
+    `[W.U32]::SetWindowPos($p.MainWindowHandle, [System.IntPtr]::Zero, 40, 30, ${width}, ${height}, 0x0040) | Out-Null`,
+  ].join("; ");
+  const deadline = Date.now() + 15_000;
+  for (;;) {
+    try {
+      execFileSync("powershell", ["-NoProfile", "-Command", ps], { stdio: "pipe" });
+      return;
+    } catch {
+      if (Date.now() > deadline) return; // window never appeared — leave default
+      await sleep(300);
+    }
+  }
+}
+
+let pixelBrowser = null;
+
+/**
+ * Counts bright-neutral and orange pixels in a PNG — replaces the PIL
+ * dependency so icon assertions run on machines without Python. Decodes
+ * via the bundled Chromium already used to drive the app.
+ *   crop:   {x, y, w, h} optional, clamped to the image
+ *   orange: [rMin, gMin, gMax, bMax] — defaults to the robot accent band
+ * Returns [whiteCount, orangeCount]. Call closePixelBrowser() when done.
+ */
+export async function pixelSignature(pngPath, crop = null, orange = [200, 60, 160, 80]) {
+  pixelBrowser ??= await chromium.launch();
+  const page = await pixelBrowser.newPage();
+  try {
+    const b64 = readFileSync(pngPath).toString("base64");
+    return await page.evaluate(
+      async ([b64i, c, o]) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${b64i}`;
+        await img.decode();
+        const x = c?.x ?? 0;
+        const y = c?.y ?? 0;
+        const w = Math.min(c?.w ?? img.width, img.width - x);
+        const h = Math.min(c?.h ?? img.height, img.height - y);
+        const cv = document.createElement("canvas");
+        cv.width = w;
+        cv.height = h;
+        const ctx = cv.getContext("2d");
+        ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
+        const d = ctx.getImageData(0, 0, w, h).data;
+        let white = 0;
+        let accent = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i];
+          const g = d[i + 1];
+          const b = d[i + 2];
+          if (r > 120 && g > 120 && b > 120) white++;
+          if (r > o[0] && g > o[1] && g < o[2] && b < o[3]) accent++;
+        }
+        return [white, accent];
+      },
+      [b64, crop, orange],
+    );
+  } finally {
+    await page.close();
+  }
+}
+
+export async function closePixelBrowser() {
+  await pixelBrowser?.close().catch(() => {});
+  pixelBrowser = null;
 }
 
 /** Waits until `predicate` holds, polling every `step` ms. */

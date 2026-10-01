@@ -35,6 +35,7 @@ import {
   killApp,
   launchApp,
   makeShotDir,
+  resizeAppWindow,
   seedSettings,
   shot,
   sleep,
@@ -64,6 +65,7 @@ async function main() {
 
   seedSettings(PROJECT);
   const appProc = launchApp(CDP_PORT);
+  await resizeAppWindow(appProc.pid);
 
   let cdp;
   try {

@@ -28,7 +28,7 @@ import {
   until,
 } from "./installed-preview.mjs";
 
-const PROJECT = "C:\\Users\\Abud\\Desktop\\git hub\\ClientFlow-CRM";
+const PROJECT = process.argv[2] ?? "C:\\Users\\Abud\\Desktop\\GitHub\\ClientFlow CRM";
 const MEDIA = join(REPO_ROOT, "docs", "media");
 const CDP_PORT = 9238;
 const CAP_PS1 = join(REPO_ROOT, "tests", "e2e", "capture-window.ps1");
