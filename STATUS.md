@@ -68,6 +68,10 @@
   **4,198,122 bytes**, SHA-256
   `3B3ABA817D4EEA8EAE24154B7CFECECF38708B499C1E0BEE24F1BDA578673404`;
   silent install → full installed matrix → verified.
+- **CI:** run `36937786536` — `completed / success` on the final
+  closure-pass product+test+docs SHA `0eccbd9` (lint, typecheck,
+  Vitest, full Playwright E2E, Rust tests/checks, production build all
+  green).
 
 ### Phase 02 corrective pass (2026-10-02)
 
