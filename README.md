@@ -10,13 +10,13 @@ RootRay is a local-first Windows developer tool that maps the rendered web
 UI back to the source code that produced it — run the project, click what
 you see, edit what it opens.
 
-[![CI](https://github.com/3bud-ZC/RootRay/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/3bud-ZC/RootRay/actions/workflows/ci.yml)
-[![Latest stable](https://img.shields.io/github/v/release/3bud-ZC/RootRay?label=stable)](https://github.com/3bud-ZC/RootRay/releases/latest)
+[![CI](https://github.com/abudoxali/RootRay/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/abudoxali/RootRay/actions/workflows/ci.yml)
+[![Latest stable](https://img.shields.io/github/v/release/abudoxali/RootRay?label=stable)](https://github.com/abudoxali/RootRay/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4)](#install-windows)
 [![Built with Tauri](https://img.shields.io/badge/Tauri-2-24C8D8)](https://tauri.app)
 
-[**Download v0.2.0 (latest stable)**](https://github.com/3bud-ZC/RootRay/releases/latest) ·
+[**Download v0.2.0 (latest stable)**](https://github.com/abudoxali/RootRay/releases/latest) ·
 [**Getting started**](#getting-started) ·
 [**Documentation**](docs/architecture.md)
 
@@ -64,7 +64,7 @@ RootRay closes the gap between them — the rendered element and the exact
 - **Universal workspace** — Explorer, Quick Open (`Ctrl+P`), Workspace
   Search (`Ctrl+Shift+F`) on almost any local project.
 - **Local-first** — no account, no cloud, no telemetry. Loopback-only
-  preview navigation; the Preview webview has zero IPC privileges.
+  Preview navigation; the Preview webview has zero IPC privileges.
 
 ## Screenshots
 
@@ -85,7 +85,7 @@ product screenshots from the desktop app.
 ## Install (Windows)
 
 1. Download `RootRay_0.2.0_x64-setup.exe` and its `.sha256` from the
-   [latest release](https://github.com/3bud-ZC/RootRay/releases/latest).
+   [latest release](https://github.com/abudoxali/RootRay/releases/latest).
 2. Verify the checksum (optional but recommended):
 
    ```powershell
@@ -173,8 +173,8 @@ RootRay shows what it can prove, never a guess. Details:
   an ephemeral per-session token.
 - **Preview isolation:** the embedded Preview is a separate WebView2
   with **zero IPC privileges** — every privileged command is denied to
-  it. Navigation is loopback-only; external links open unprivileged in
-  the system browser.
+  it. Main-frame navigation is loopback-only; remote new-window links
+  open unprivileged in the system browser.
 - **Filesystem boundary:** reads/writes are workspace-relative only —
   `..`, absolute paths, symlink escapes, `.env*`, keys, `.git`,
   `node_modules`, oversized/binary files are refused.
@@ -200,7 +200,7 @@ See [SECURITY.md](SECURITY.md) to report a vulnerability.
 Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md),
 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) and the
 [issue templates](.github/ISSUE_TEMPLATE). Bugs and feature requests:
-[GitHub Issues](https://github.com/3bud-ZC/RootRay/issues).
+[GitHub Issues](https://github.com/abudoxali/RootRay/issues).
 Milestone/release state: [STATUS.md](STATUS.md) ·
 [CHANGELOG.md](CHANGELOG.md).
 

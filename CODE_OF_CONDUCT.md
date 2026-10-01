@@ -30,7 +30,7 @@ issues, and other contributions that violate them — temporarily or
 permanently.
 
 Report unacceptable behavior through
-[GitHub's private reporting to the maintainer](https://github.com/3bud-ZC/RootRay/security/advisories/new)
+[GitHub's private reporting to the maintainer](https://github.com/abudoxali/RootRay/security/advisories/new)
 or by contacting the repository owner via their GitHub profile. All
 reports will be reviewed and investigated, and kept confidential.
 

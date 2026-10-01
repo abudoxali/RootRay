@@ -182,6 +182,16 @@ describe("brand assets", () => {
   );
 });
 
+describe("repository identity", () => {
+  const settingsPanel = readFileSync("src/features/settings/SettingsPanel.tsx", "utf8");
+
+  it("ships the canonical GitHub repository in Settings/About", () => {
+    expect(settingsPanel).toContain("https://github.com/abudoxali/RootRay");
+    expect(settingsPanel).toContain("github.com/abudoxali/RootRay");
+    expect(settingsPanel).not.toContain(["3bud", "ZC"].join("-"));
+  });
+});
+
 describe("app header", () => {
   const app = readFileSync("src/app/App.tsx", "utf8");
   const projectView = readFileSync("src/features/projects/ProjectView.tsx", "utf8");

@@ -8,7 +8,7 @@ body:
       value: |
         Thanks for reporting. **Never paste secrets, `.env` contents,
         tokens, or private source code** into an issue.
-        Security vulnerabilities → [private advisory](https://github.com/3bud-ZC/RootRay/security/advisories/new), not here.
+        Security vulnerabilities → [private advisory](https://github.com/abudoxali/RootRay/security/advisories/new), not here.
 
   - type: input
     id: version

@@ -21,13 +21,13 @@ export function SettingsPanel() {
   useEffect(() => {
     getSettings()
       .then(setSettings)
-      .catch(() => {});
+      .catch(() => undefined);
     detectEditors()
       .then(setLaunchers)
-      .catch(() => {});
+      .catch(() => undefined);
     getDiagnostics()
       .then((d) => setVersion(d.version))
-      .catch(() => {});
+      .catch(() => undefined);
   }, []);
 
   const patch = async (p: Parameters<typeof updateSettings>[0], fallback: string) => {
@@ -151,9 +151,11 @@ export function SettingsPanel() {
                 <button
                   type="button"
                   className="about-link"
-                  onClick={() => openBrowser("https://github.com/3bud-ZC/RootRay").catch(() => {})}
+                  onClick={() =>
+                    openBrowser("https://github.com/abudoxali/RootRay").catch(() => undefined)
+                  }
                 >
-                  github.com/3bud-ZC/RootRay
+                  github.com/abudoxali/RootRay
                 </button>
                 <br />
                 Latest stable release: v0.2.0

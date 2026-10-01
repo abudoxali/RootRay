@@ -13,7 +13,7 @@
 Please **do not open a public issue** for exploitable vulnerabilities.
 
 Report privately through **GitHub's private vulnerability reporting**:
-[github.com/3bud-ZC/RootRay/security/advisories/new](https://github.com/3bud-ZC/RootRay/security/advisories/new)
+[github.com/abudoxali/RootRay/security/advisories/new](https://github.com/abudoxali/RootRay/security/advisories/new)
 
 Include: affected version, reproduction steps, impact, and any suggested
 mitigation. We will acknowledge the report and coordinate a fix and
@@ -25,10 +25,10 @@ fix is available.
 RootRay is **local-first** by design — understanding the boundaries
 helps target reports usefully:
 
-- **No remote attack surface by default.** The only listener is the
-  inspector bridge on `ws://127.0.0.1` (loopback only) with an ephemeral
-  per-session token on a dynamic port. Wrong token/session/version and
-  malformed messages are rejected.
+- **No RootRay-owned remote listener.** The inspector bridge binds to
+  `ws://127.0.0.1` (loopback only) with an ephemeral per-session token on
+  a dynamic port. Wrong token/session/version and malformed messages are
+  rejected. A launched project dev server retains its own network policy.
 - **Preview isolation.** The embedded project Preview is a separate
   WebView2 with zero IPC privileges — every privileged Tauri command is
   denied to it natively. Main-frame navigation is loopback-only;

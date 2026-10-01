@@ -9,8 +9,9 @@ style. Dates are UTC. Authoritative detail: [STATUS.md](STATUS.md).
 
 - Embedded WebView2 **Preview** inside RootRay — the project runs in the
   app, not an external browser. Interact/Inspect modes, browser toolbar
-  (back/forward/reload/URL/external), loopback-only navigation with a
-  deny-list for remote links. Preview webview has zero IPC privileges.
+  (back/forward/reload/URL/external), loopback-only main-frame navigation;
+  remote new-window links open in the system browser. Preview webview has
+  zero IPC privileges.
 - **Click-to-source in one window** — inspect an element and the mapped
   source opens beside the Preview; edit and save with HMR/Fast Refresh
   or SSE reload applying in place.
@@ -53,7 +54,7 @@ style. Dates are UTC. Authoritative detail: [STATUS.md](STATUS.md).
 - Next.js adapter (Turbopack + webpack dev paths), React 19 support,
   instrumentation idempotency.
 - Installer, session recovery, diagnostics, accessibility pass.
-- See the [v0.2.0 release](https://github.com/3bud-ZC/RootRay/releases/tag/v0.2.0)
+- See the [v0.2.0 release](https://github.com/abudoxali/RootRay/releases/tag/v0.2.0)
   and STATUS.md for the full record.
 
 ## [0.1.1] — 2026-09 — Patch

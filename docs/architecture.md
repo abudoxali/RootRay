@@ -1,170 +1,281 @@
 # RootRay Architecture
 
-## Layers
+## System layers
 
-```
-React frontend (apps/desktop)
-        │  invoke: narrow commands only
+```text
+Desktop React UI (apps/desktop)
+        │  invoke narrow commands / receive Tauri events
         ▼
-src-tauri command layer (apps/desktop/src-tauri)
-        │  delegates everything
+Tauri command and event boundary (apps/desktop/src-tauri)
+        │  delegates application logic
         ▼
-rootray-core (crates/rootray-core)   ← all logic, zero Tauri deps
+rootray-core (crates/rootray-core) — no Tauri dependency
         │
-        ├─ project/     detection + adapter registry + dev-command resolution
-        ├─ process/     spawn/supervise/kill dev servers + URL detection
-        │               (+ job.rs — Windows Job Object containment)
-        ├─ launcher/    external editor registry + open
-        ├─ filesystem/  canonicalized path boundaries
-        ├─ state/       runtime state machine (idle…failed)
-        ├─ settings/    local JSON settings store
-        └─ app.rs       AppCore — orchestrates state + processes
+        ├─ project/       bounded discovery, framework detection, targets, capabilities
+        ├─ process/       dev-server spawn, output, URL detection and shutdown
+        ├─ inspector/     adapters, authenticated bridge, session lifecycle
+        ├─ static_server  loopback static hosting, HTML injection and reload events
+        ├─ editor/        safe reads, writes, conflicts and file watching
+        ├─ filesystem/    canonicalized workspace boundaries and navigation
+        ├─ launcher/      external editor and browser launch
+        ├─ state/         authoritative runtime state machine
+        ├─ settings/      local settings store
+        └─ app.rs         AppCore orchestration
 ```
 
-## Why `rootray-core` is separate
+The Tauri shell exposes explicit application commands only. It does not expose a
+generic command executor. `AppCore` owns project analysis, the selected target,
+the dev-server or static-server lifecycle, the inspector session and the editor
+session. Keeping those operations in `rootray-core` makes them testable without
+a webview and keeps the native privilege boundary small.
 
-The Tauri shell only wires `AppCore` methods to `invoke` commands and
-forwards `ProcessEvent`s to the frontend. Keeping the core Tauri-free means
-every behavior is unit-testable without a webview, and the security boundary
-("frontend can only do X") is physically enforced by the command list.
+## Implemented v0.3 flow
 
-## Event flow
-
-```
-dev server stdout/stderr
-    → ProcessManager reader threads
-    → ProcessEvent sink
-    → AppCore updates RuntimeState (authoritative)
-    → hook → tauri emit: rootray://process-event + rootray://state
-    → frontend reducer → UI
-```
-
-The frontend never polls; it receives events plus a fresh state snapshot.
-
-## Runtime state machine
-
-```
-idle ──▶ analyzing ──▶ ready ──▶ starting ──▶ running ──▶ stopping ──▶ stopped
-          │             │           │            │                      │
-          └──▶ failed ◀─┴───────────┴────────────┴──▶ failed            └──▶ starting (restart)
+```text
+Open Project
+  → bounded workspace analysis and target selection
+  → Run
+  → AppCore chooses the target runner and InspectorAdapter
+  → instrumented dev server, or RootRay's static loopback server
+  → URL detection
+  → embedded child WebView2 Preview
+  → Interact or Inspect
+  → authenticated inspector selection
+  → workspace-relative source resolution
+  → CodeMirror Quick Edit
+  → hash-checked atomic save
+  → HMR / Fast Refresh, or static-server SSE reload
 ```
 
-- Exits during `running`/`starting`: code 0 → `stopped`, otherwise `failed`.
-- `failed` allows `starting` (retry/restart) — a dead process handle is
-  simply replaced.
-- Events are generation-guarded: output from a killed process cannot
-  corrupt the state of a newer run.
+Project discovery does not execute project code. It distinguishes the selected
+workspace root (also the filesystem security root) from a nested active target
+root. The active target determines the run directory and capabilities while
+Explorer, Search and source paths remain workspace-relative.
 
-### Process containment (Windows)
+## Commands, events and state
 
-Every dev server RootRay spawns is assigned to a RootRay-owned **Job
-Object** configured with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`:
+The main React webview invokes commands declared in the Tauri shell. Process,
+inspector, editor and Preview changes return as full or typed event payloads:
 
-- Descendants spawned by the dev server (Vite → esbuild → etc.) join the
-  same job automatically.
-- `Stop`/`Restart` still use graceful tree termination — the job is the
-  *abnormal*-exit safety net.
-- If the RootRay process dies (crash, kill, power), Windows closes the job
-  handle and terminates the whole tree — no orphaned dev servers.
-- Only processes RootRay spawned are ever in its job; unrelated user
-  processes are never touched, and nothing is killed "because it used a
-  port".
+```text
+dev-server stdout/stderr
+  → ProcessManager reader threads
+  → AppCore RuntimeState update
+  → rootray://process-event + rootray://state
+  → frontend reducer
 
-## Adding a framework adapter
+inspector bridge
+  → validated InspectorState
+  → rootray://inspector-state
+  → selection auto-reveal
 
-Implement `project::adapters::ProjectAdapter` (`detect(ctx)`), register it
-in `adapters()`. Dev-command resolution is shared (package-manager driven),
-so adapters only identify the framework.
+file watcher
+  → rootray://editor-event
+  → reload clean sessions or surface a conflict
 
-## Adding an editor launcher
-
-Append a `LauncherSpec` (id, display name, PATH names, known install
-locations) to `LAUNCHERS` in `launcher/mod.rs`.
-
-## Inspector (Milestone 02)
-
-```
-Vite dev transform (babel) ── stamps data-rootray-{file,line,column,component}
-        │                       on intrinsic JSX elements; source untouched
-        ▼
-rendered DOM ──▶ browser inspector-runtime (Shadow-DOM overlay,
-        │        capture-phase suppression, Escape, bounded reconnect)
-        ▼
-ws://127.0.0.1:<dynamic>/rootray  + per-session token + versioned protocol
-        ▼
-Rust inspector bridge ── validates version/token/shape/path-safety
-        ▼
-AppCore ──▶ rootray://inspector-state + selection ──▶ InspectorPanel
-        ▼
-read_source_preview / open_source_location  (re-validated vs project root)
+child Preview webview
+  → native PreviewState
+  → rootray://preview-state
+  → toolbar/loading state
 ```
 
-Browser messages are data only. Every privileged action is an explicit
-command initiated by the desktop UI, never by the page.
+`RuntimeState.seq` and process generations prevent older asynchronous snapshots
+or output from replacing a newer project/run state. Project changes and
+start/stop/restart operations are serialized in the core.
 
-## Safe source editing (Milestone 03)
+The runtime state machine is:
 
-```
-Quick Edit ─▶ editor::file::read_source_file
-              (relative path → canonicalized inside root; deny list for
-              secrets / generated dirs; ≤2 MiB; UTF-8; NUL-sniff; BOM/EOL)
-        ▼
-EditorManager session: baseHash + revert snapshot + notify watcher
-        ▼
-CodeMirror (lazy chunk): LF buffer, dirty tracking, Ctrl+S / Ctrl+F,
-        line diff vs last-known disk snapshot
-        ▼
-save_source_file(content, expectedHash)
-  → re-read disk → hash mismatch → SOURCE_EDIT_CONFLICT
-  → match → encode(BOM/EOL) → same-dir temp → fsync → rename (atomic)
-        ▼
-Vite filesystem watcher → HMR → instrumented re-render → re-inspect
-
-External write on the open file → notify → hash != baseHash →
-  rootray://editor-event → clean session auto-reloads;
-  dirty session → conflict UI (Reload / Compare / keep editing)
+```text
+idle → analyzing → ready → starting → running → stopping → stopped
+          │          │          │          │                    │
+          └──────────┴──────────┴──────────┴──────→ failed      └→ starting
 ```
 
-`peek_source_file` is a read-only fetch that never mutates the session —
-it powers the conflict "Compare" view. `revert_source_save` restores the
-bytes before RootRay's last write only while the disk still matches that
-write. The watcher covers exactly the open file — no project indexing.
+A clean or failed process exit updates the authoritative state. Restart may
+begin from running, stopped or failed. Changing project while live stops the
+owned server tree and analyzes the new directory under one lifecycle hold.
 
-## Project intelligence & styling (Milestone 04)
+## Dev-server and inspector adapters
 
+`InspectorAdapter` currently has three implemented paths:
+
+- `ViteReact` runs a reconstructable plain Vite command through RootRay's
+  in-memory plugin in `jsx-meta` mode.
+- `ViteGeneric` serves plain Vite, Vue + Vite and Svelte + Vite targets in
+  `generic-dom` mode when their script is reconstructable as Vite. Authored
+  `index.html` can map exactly; framework-created DOM remains inspectable but
+  has no fabricated component/source mapping.
+- `NextJs` runs a reconstructable `next dev` command with RootRay's shim and JSX
+  loader for supported Turbopack and webpack development paths.
+
+Other detected frameworks may still run their declared script, but they do not
+receive an inspector adapter. Capability rows report the limitation instead of
+claiming component/source support.
+
+Static web targets use RootRay's own loopback HTTP server. It stamps authored
+HTML, injects the inspector runtime and exposes an SSE endpoint used to reload
+a connected page after a save.
+
+Adapter assets are shipped with the desktop bundle. Instrumentation is applied
+at dev-server/build-transform time; RootRay does not rewrite project source.
+The Next.js path writes a generated session entry under
+`node_modules/.cache/rootray/`, then replaces it with an inert stub at session
+end so stale bundler cache imports remain resolvable.
+
+## Embedded Preview
+
+RootRay uses two webviews in one native window:
+
+1. **Main RootRay webview** — renders the trusted React workbench and owns the
+   Tauri capability set.
+2. **`project-preview` child webview** — renders the user's local application
+   as a native WebView2 child surface. It matches no Tauri capability and has no
+   privileged IPC commands.
+
+The Preview is not an iframe or a React DOM child. `PreviewPanel` renders a
+`.preview-host` placeholder and measures its logical rectangle. A
+`ResizeObserver`, batched through `requestAnimationFrame`, calls
+`preview_set_bounds` only when the rectangle materially changes. Native code
+positions the child WebView2 over that rectangle. Pane resize, Preview/Code/
+Split changes, focus modes and Output changes therefore keep the native surface
+aligned with the React layout.
+
+The child surface is hidden while a modal, palette or splitter drag needs to
+cover its pixels, and in Code-only mode. Hiding preserves browser state.
+Stopping the runtime closes the child webview; changing projects or returning to
+an idle/ready analysis state disposes it and clears its URL.
+
+### Preview isolation and navigation
+
+Tauri capabilities are scoped to `webviews: ["main"]`; the child Preview has no
+matching capability. Preview commands also reject any caller whose webview
+label is not `main`, providing a second native check.
+
+Main-frame Preview navigation accepts only loopback HTTP(S) URLs. Address-bar
+navigation is validated in both React and native code. New-window requests are
+always denied: loopback links navigate the existing Preview, remote HTTP(S)
+links are handed to the unprivileged system browser, and other schemes are
+denied.
+
+The project page does not send selections through Tauri IPC. It communicates
+with the separate inspector bridge described below.
+
+## Interact, Inspect and selection transport
+
+**Interact** leaves the project page's normal pointer and keyboard behavior in
+control. **Inspect** tells the in-page inspector runtime to show its overlay and
+capture an element selection. Escape or the workbench toggle returns to
+Interact.
+
+```text
+instrumented project runtime
+  → element:selected protocol message
+  → ws://127.0.0.1:<dynamic>/rootray
+  → session id + ephemeral token + protocol/shape validation
+  → source-path rebasing and workspace-boundary validation
+  → InspectorState selection event
+  → Inspector metadata + Code pane auto-reveal
 ```
-Explorer / Quick Open / Search          Component & style intelligence
-        │                                        │
-        ▼                                        ▼
-filesystem/nav.rs (native)            inspector-runtime/styles.ts
-  list_project_dir   — lazy, one dir    (click-select only: classes,
-  list_project_files — bounded walk      box model, curated computed,
-  search_workspace   — capped files/     matched CSSOM rules, Vite
-                       bytes/results     dev-id → relative stylesheet)
-  collect_source_files — bounded text          │
-  corpus for analysis                        ▼
-        │                             Rust bridge: validated, bounded
-        ▼                                        ▼
-  all paths: relative only,           @rootray/intelligence (lazy chunk):
-  canonicalized inside project root,  Babel parse of .js/.jsx/.ts/.tsx →
-  secrets + generated dirs denied,    component defs, JSX usages, local
-  hard caps everywhere                import resolution (incl. unambiguous
-                                      index re-export); cached snapshot,
-                                      invalidated on any source change
+
+The bridge listens on loopback with a dynamic port and per-session credentials.
+Messages are data only. A project page cannot request a file read, write,
+process operation or native Preview command.
+
+React/Next instrumentation stamps intrinsic JSX elements with
+`data-rootray-file`, line, column and component metadata. Generic Vite/static
+instrumentation stamps authored HTML. In `jsx-meta` mode the runtime may select
+the nearest instrumented authored ancestor; in `generic-dom` mode it reports
+the selected DOM node and includes source only when that node has an authored
+stamp. Runtime-created DOM and canvas surfaces remain inspectable for element
+facts/styles but report no authored source.
+
+## Source resolution and CodeMirror handoff
+
+A source-bearing selection contains a workspace-relative path and a 1-based
+line/column. The Rust bridge validates and rebases target-relative metadata to
+the workspace root. The frontend's selection auto-reveal then:
+
+1. keeps Preview visible and switches Preview-only view to Split;
+2. opens the reported relative path through `open_source_editor`;
+3. discards stale reads using a monotonic Quick Edit sequence;
+4. preserves dirty text on same-file reselection and only moves the marker;
+5. passes the returned source text and exact location to the lazy CodeMirror
+   editor.
+
+CodeMirror initializes from the latest source value after its asynchronous
+language extension resolves, reconciles any value that arrived during mount,
+and applies the selected-line decoration. The editor surface stays covered by a
+loading state until non-whitespace source is rendered; a genuinely empty file
+uses an explicit empty-file state.
+
+Preview Focus deliberately does not tear down the focused layout when a
+selection arrives. It shows a source offer; accepting it exits focus and opens
+Split.
+
+## Safe source editing
+
+```text
+open_source_editor(relative path)
+  → canonicalize inside workspace root
+  → deny secrets/generated paths, oversized/binary/non-UTF-8 files
+  → return content + SHA-256 + BOM/EOL metadata
+  → CodeMirror editing
+  → save_source_file(content, expected hash)
+  → re-read disk and compare hash
+  → encode original BOM/EOL
+  → same-directory temporary file + fsync + atomic rename
+  → watcher event / HMR, Fast Refresh or static SSE reload
 ```
 
-- **Navigation is lazy** — directory children are fetched per expand; the
-  file list for Quick Open is one bounded walk, not a watcher.
-- **Search is stale-proof** — the UI tags each request with a monotonic
-  id; a slower earlier result can never overwrite a newer one.
-- **Analysis never executes project code** — Babel treats source as data;
-  there is no `require`, no tsconfig resolution, no module runner.
-- **Unresolved is a first-class result** — missing imports, external
-  packages, and ambiguous re-exports are labeled `unresolved` rather than
-  guessed.
-- **Style payload is curated** — ~20 computed properties, bounded
-  declarations and rules, no full CSSOM dump; collected once per
-  selection, never on hover.
-- **Stylesheet mapping is conservative** — `data-vite-dev-id` paths are
-  normalized to project-relative and rejected if they escape the root;
-  selector-level line resolution is not attempted (reported unresolved).
+A hash mismatch produces `SOURCE_EDIT_CONFLICT`; unsaved content is retained.
+Clean sessions may reload after an external write, while dirty sessions show a
+conflict. `peek_source_file` supports comparison without mutating the edit
+session, and revert is allowed only while disk still matches RootRay's last
+write.
+
+All project file operations revalidate paths against the workspace root and
+refuse traversal, absolute paths, symlink escapes, secrets, generated trees,
+binary files and oversized files.
+
+## Responsive workbench
+
+Preview and Code are the primary Split surfaces. Each has a practical 360 px
+minimum. Explorer and Inspector are secondary: when the measured workbench
+width cannot preserve both primary surfaces, Inspector auto-collapses first and
+Explorer next. These responsive hides are transient and do not overwrite the
+user's persisted visibility settings.
+
+Explorer, Inspector and Output retain their state when collapsed. Pane widths,
+Output height and split ratio are clamped before persistence. Focus modes and
+responsive auto-hides are session-only. The native Preview receives new bounds
+after every layout change.
+
+## Process containment on Windows
+
+Every spawned dev server is assigned to a RootRay-owned Windows Job Object with
+`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`. Descendants join the job automatically.
+Stop and Restart perform normal owned-tree termination; closing or crashing
+RootRay closes the job handle so the tree cannot be orphaned. RootRay never
+kills a process merely because it owns a port.
+
+## Project navigation and static intelligence
+
+Explorer fetches directory children lazily. Quick Open and Workspace Search use
+bounded native walks with file, byte and result caps. Component intelligence
+parses collected JavaScript/TypeScript source as data; it does not import or
+execute project modules. Unresolved imports, aliases and ambiguous re-exports
+remain explicitly unresolved.
+
+Style inspection is collected on selection and bounded to curated computed
+properties, box-model values and matched rules. Vite stylesheet paths are
+normalized and rejected if they escape the workspace; selector-line inference
+is not claimed.
+
+## Extension points
+
+A new runtime integration belongs behind `InspectorAdapter` and must define its
+honest capability tier, safe command reconstruction and instrumentation path.
+Framework detection alone does not imply source or component mapping.
+
+External editor support is extended through `LauncherSpec` entries in
+`launcher/mod.rs`; all launches still receive a workspace-bounded path.

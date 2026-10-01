@@ -1,14 +1,14 @@
 name: Release
 
-# RootRay release build — produces the unsigned MVP Windows installer.
+# RootRay release-candidate build — produces the unsigned Windows NSIS installer.
 #
 # Triggers:
 #   - workflow_dispatch: manual "build the installer" run from Actions UI
 #   - push tags "v*": tag-triggered build (the human creates the tag)
 #
-# This workflow NEVER creates a GitHub Release. It builds, checksums, and
-# uploads artifacts to the Actions run. Publishing `v0.1.0` is a human
-# decision made after inspecting these artifacts.
+# This workflow NEVER creates a GitHub Release. It runs the quality gate,
+# builds and checksums the installer, smoke-tests it, and uploads artifacts
+# to the Actions run. Publication remains an explicit human decision.
 
 on:
   workflow_dispatch:
