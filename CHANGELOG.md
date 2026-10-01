@@ -42,6 +42,15 @@ style. Dates are UTC. Authoritative detail: [STATUS.md](STATUS.md).
 - Quick Edit could transiently present a blank CodeMirror surface on
   slow mounts — the editor now reconciles content after the lazy view
   mounts and stays hidden until real source text is rendered.
+- **Installed build rendered an empty CodeMirror surface** — Tauri
+  injects per-asset `'nonce-…'` sources into `style-src`, which makes
+  the configured `'unsafe-inline'` inert and blocked CodeMirror's
+  runtime `style-mod` stylesheet (gutters painted, code text stacked
+  below the fold). CSP modification is now disabled for `style-src`
+  only; `script-src` keeps its nonce hardening.
+- Toggling a pane that the responsive policy had auto-hidden silently
+  discarded the saved visibility preference; the toggle now explains
+  that the pane is hidden for width and returns when there is room.
 - Dev-server startup failures (missing dependencies, spawn errors)
   reach a visible failed state with useful output and a working Retry —
   no blank window, no stuck Preview, no orphaned process tree.

@@ -21,11 +21,52 @@
 - Rust: **200 passed**
 - Ignored Rust: **1 passed explicitly**
 - Vitest: **215 passed**
-- Playwright: **67 passed**
+- Playwright: **68 passed**
 - TypeScript: **PASS**
 - Biome: **0 errors** (8 existing CSS specificity warnings)
 - Workspace, desktop and Tauri/NSIS builds: **PASS**
 - Installer smoke: **PASS**
+
+### Phase 02 corrective pass (2026-10-02)
+
+A full product QA/repair pass against the installed artifact surfaced and
+fixed real defects:
+
+- **Installed CodeMirror rendered blank** — a genuine installed-only
+  defect. Tauri injects per-asset `'nonce-…'` sources into the CSP
+  `style-src`, which makes the configured `'unsafe-inline'` inert, so
+  `style-mod`'s runtime `<style>` (base layout, gutters, theme,
+  highlight) was blocked: `.cm-scroller` lost `display:flex;
+  overflow:auto`, the content column stacked ~1,100px below the visible
+  pane, and line numbers painted over empty space.
+  `dangerousDisableAssetCspModification: ["style-src"]` restores the
+  declared policy; `script-src` keeps Tauri's nonce hardening. Verified
+  by live geometry probe and OS-level screenshot — the editor now paints
+  syntax-highlighted source in the installed build.
+- **Auto-hidden pane toggle destroyed the saved preference** — clicking
+  an Explorer/Inspector toggle while the responsive policy had hidden it
+  flipped the persisted preference with no visible effect. The toggle
+  now posts an explanatory notice and preserves the preference.
+- **Acceptance harness hardening** — e2e servers are killed by process
+  tree (Windows shell wrappers previously orphaned `vite preview` and
+  poisoned ports); suite preflights fail fast on squatted ports; the
+  Playwright global timeout was raised to 30 min for the real-dev-server
+  suite; installed verifiers reset persisted WebView2 layout prefs,
+  resize the native window to a realistic width, accept the real
+  ClientFlow path, drop the Python/Pillow dependency, and wait for the
+  inspector bridge to report `inspecting === false` before driving
+  Interact clicks; the native folder picker types the target path
+  directly (the breadcrumb read raced `NO_CURRENTPATH` when the dialog
+  opened on a shell library).
+- **Re-verified on the fixed artifact** — installed golden paths
+  (React+Vite, Next.js, static, pnpm monorepo), ClientFlow CRM end-to-end,
+  layout/transitions incl. native Change Project, brand/icons, and
+  invalid-project/missing-deps recovery all PASS; full Playwright suite
+  **68 passed** on the final code.
+- **Final candidate artifact:** `RootRay_0.3.0_x64-setup.exe` —
+  **4,190,912 bytes**, SHA-256
+  `83E60E3FC1536BF119EF7A9D65F7376DCCD0D96BA7240097A5534649119AE0F9`;
+  silent install → launch → verified → clean teardown.
 
 ### Phase 02 final acceptance (2026-10-01)
 
@@ -54,10 +95,10 @@
   hide/show, Output collapse + resize, Preview Focus, Code Focus,
   Preview/Code split resize, Inspect while Inspector hidden, selection
   and source persistence, Restart, Stop. The native Change Project
-  folder-picker continuation was explicitly skipped via
-  `ROOTRAY_SKIP_NATIVE_PICKER=1` (UIAutomation `NO_CURRENTPATH` on this
-  machine — an environment limitation, not a product result); it remains
-  enabled by default.
+  folder-picker continuation now passes: the picker helper types the
+  target path into the dialog's filename box (the previous breadcrumb
+  read raced `NO_CURRENTPATH` when the dialog opened on a shell
+  library).
 - **Error / recovery acceptance:** PASS — malformed JSX produces Vite's
   error surface while RootRay stays running, restoring valid source
   recovers; invalid restored project path returns Home with a precise
@@ -202,15 +243,15 @@
 
 ### Current development installer
 
-- `RootRay_0.3.0_x64-setup.exe` — **4,189,851 bytes**, SHA-256
-  `0BED4EDFC2907C973ABB2E9B60B8B87BC970876F993CE7C970854C9E36E86AB0`
-  (Phase 02 final candidate; supersedes the Phase 01 artifact)
+- `RootRay_0.3.0_x64-setup.exe` — **4,190,912 bytes**, SHA-256
+  `83E60E3FC1536BF119EF7A9D65F7376DCCD0D96BA7240097A5534649119AE0F9`
+  (Phase 02 corrective-pass candidate; supersedes earlier artifacts)
 
 - **Product candidate source identity:** read the final product-code
   commit with `git rev-parse HEAD` after the candidate commit.
 - **Product candidate CI:** latest pushed candidate CI is reported with
   the final acceptance result for that exact SHA.
-- **Last Updated:** 2026-10-01
+- **Last Updated:** 2026-10-02
 
 > STATUS.md does not hard-code the mutable repository tip. Read the
 > product candidate source SHA and current repository tip from Git;
