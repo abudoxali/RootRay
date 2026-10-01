@@ -75,7 +75,9 @@ async function main() {
 
     // ---- analyze ------------------------------------------------------------
     const pkgName = JSON.parse(readFileSync(join(PROJECT, "package.json"), "utf8")).name;
-    const dirName = PROJECT.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
+    const dirName = PROJECT.replace(/[\\/]+$/, "")
+      .split(/[\\/]/)
+      .pop();
     await waitText(appPage, pkgName || dirName, 60_000).catch(() =>
       waitText(appPage, dirName, 60_000),
     );
@@ -192,7 +194,7 @@ async function main() {
 
     console.log("\nINSTALLED SHADOW-RUNNER VERIFICATION (INTERNAL PREVIEW): PASS");
   } finally {
-    await cdp?.close().catch(() => { });
+    await cdp?.close().catch(() => {});
     await killApp(appProc);
   }
 }
