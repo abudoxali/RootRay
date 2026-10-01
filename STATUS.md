@@ -2,15 +2,15 @@
 
 ## Current Development
 
-- **Version:** `v0.3.0-dev`
-- **Phase:** Phase 01 — v0.3 Release Candidate Closure + Canonical Repository Identity
+- **Version:** `v0.3.0` (final release candidate; dev suffix removed for publication prep)
+- **Phase:** Phase 02 — Final Human Acceptance + v0.3.0 Release Preparation
 - **Canonical repository:** `abudoxali/RootRay`
-- **State:** RELEASE CANDIDATE READY FOR HUMAN ACCEPTANCE
+- **State:** FINAL RELEASE CANDIDATE — READY TO PUBLISH
 - **Published:** NO
 - **Tagged:** NO
 - **Stable release:** `v0.2.0` (see **Current Release** below)
-- **Latest functional state:** Release-candidate closure complete on top of the
-  Workbench Density + Inspector Responsiveness Pass
+- **Latest functional state:** Phase 02 installed acceptance complete on the
+  final candidate artifact
 - **Inspect-to-Code:** PASS
 - **Blank editor:** FIXED
 - **Rapid selection stale-read protection:** PASS
@@ -26,6 +26,56 @@
 - Biome: **0 errors** (8 existing CSS specificity warnings)
 - Workspace, desktop and Tauri/NSIS builds: **PASS**
 - Installer smoke: **PASS**
+
+### Phase 02 final acceptance (2026-10-01)
+
+- **ClientFlow-CRM real installed acceptance:** PASS. Dependencies were
+  prepared from its declared `package-lock.json` via `npm ci` plus its
+  declared `db:generate` script (generated Prisma client only — no source
+  edits). Installed RootRay: analyze (`Next.js 16.2.12`) → Run → embedded
+  Preview on `/login` → Preview IPC denial verified → Interact focused
+  the real email input → Inspect mapped page, `Card`, `CardHeader`,
+  `Label`, form and input with actual non-whitespace CodeMirror source
+  and exact marked lines. Exact regression: `label[for="email"]` →
+  `src/components/ui/label.tsx:9:5`, component `Label`. Same-file
+  refocus (Card → CardHeader at distinct authored lines) and rapid
+  Card → input selection (newest wins in Inspector and CodeMirror) both
+  PASS. Stop tore down Preview and the dev-server tree; ClientFlow's
+  Git state remained identical to its pre-test baseline.
+- **Installed core workflow (React + Vite):** PASS — launch → Home →
+  Open Project → Ready → Run → embedded Preview → Interact ↔ Inspect →
+  source → Quick Edit save → Vite HMR → re-inspect → navigation →
+  Stop → Preview teardown → dead URL → no child process tree.
+- **Installed static workflow:** PASS — built-in loopback static server,
+  authored `<canvas>` → `index.html` mapping, runtime-created element
+  honestly reports no source, Quick Edit save, SSE reload, Escape exits
+  Inspect, Stop tears down the server.
+- **Installed workbench:** PASS — Reset Layout, Explorer/Inspector
+  hide/show, Output collapse + resize, Preview Focus, Code Focus,
+  Preview/Code split resize, Inspect while Inspector hidden, selection
+  and source persistence, Restart, Stop. The native Change Project
+  folder-picker continuation was explicitly skipped via
+  `ROOTRAY_SKIP_NATIVE_PICKER=1` (UIAutomation `NO_CURRENTPATH` on this
+  machine — an environment limitation, not a product result); it remains
+  enabled by default.
+- **Error / recovery acceptance:** PASS — malformed JSX produces Vite's
+  error surface while RootRay stays running, restoring valid source
+  recovers; invalid restored project path returns Home with a precise
+  readable-directory/system-not-found notice; missing Next dependency
+  reaches a visible failed state with the concrete npm/cmd
+  command-not-found output, enabled Retry, no stuck Preview and no
+  surviving child process.
+- **Version consistency:** `0.3.0` across root `package.json`, all eight
+  `packages/*` manifests, `apps/desktop/package.json`,
+  `tauri.conf.json` and both `Cargo.toml` manifests (`@rootray/e2e` is
+  intentionally `private`/`0.0.0`).
+- **Windows identity:** unchanged — official ICO is bound to the
+  executable, installer, uninstaller, Start Menu, taskbar and Alt+Tab
+  surfaces; the in-app header has no interior icon. Covered by the
+  committed ICO generation/configuration tests.
+- **Remaining blockers:** none. Human acceptance and green CI on the
+  exact pushed SHA remain mandatory; v0.3.0 remains unpublished and
+  untagged until explicit approval.
 
 ### Phase 01 release-candidate closure (2026-10-01)
 
@@ -145,8 +195,9 @@
 
 ### Current development installer
 
-- `RootRay_0.3.0_x64-setup.exe` — **4,187,697 bytes**, SHA-256
-  `02E6D05177306237E714E7A4A37904EE35FDF8F5C6D2E296E2914AD8265ECD9D`
+- `RootRay_0.3.0_x64-setup.exe` — **4,189,851 bytes**, SHA-256
+  `0BED4EDFC2907C973ABB2E9B60B8B87BC970876F993CE7C970854C9E36E86AB0`
+  (Phase 02 final candidate; supersedes the Phase 01 artifact)
 
 - **Product candidate source identity:** read the final product-code
   commit with `git rev-parse HEAD` after the candidate commit.

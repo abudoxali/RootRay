@@ -19,8 +19,12 @@ style. Dates are UTC. Authoritative detail: [STATUS.md](STATUS.md).
   Inspector and Output panes (`Ctrl+B`, `Ctrl+J`), Preview/Code/Split
   views, Preview Focus and Code Focus modes, draggable split with
   double-click reset, persisted layout with clamping, Reset Layout.
-- **Brand identity** — RootRay pixel-art mascot/wordmark, new app icon
-  pipeline, branded home/splash/states, canonical guide in
+- **Responsive workbench** — Inspector auto-collapses before Explorer
+  when Split cannot satisfy Preview + Code minimums; user preferences
+  are preserved and restored when space returns.
+- **Brand identity** — official RootRay application icon across the
+  executable, installer, uninstaller, Start Menu, taskbar and Alt+Tab;
+  pixel-art mascot/wordmark on home/splash, canonical guide in
   `docs/brand.md`.
 - `change_project` command — switching projects while a server runs
   stops the old tree and analyzes under one lifecycle hold.
@@ -35,6 +39,12 @@ style. Dates are UTC. Authoritative detail: [STATUS.md](STATUS.md).
   events could overwrite the newer snapshot.
 - Preview bounds/visibility now track every layout change (pane
   collapse, split drag, focus modes, output resize).
+- Quick Edit could transiently present a blank CodeMirror surface on
+  slow mounts — the editor now reconciles content after the lazy view
+  mounts and stays hidden until real source text is rendered.
+- Dev-server startup failures (missing dependencies, spawn errors)
+  reach a visible failed state with useful output and a working Retry —
+  no blank window, no stuck Preview, no orphaned process tree.
 
 ### Community
 
