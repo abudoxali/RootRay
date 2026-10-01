@@ -290,6 +290,30 @@ export async function until(predicate, what, timeoutMs = 15_000, step = 250) {
   assert.fail(`timeout waiting for ${what}`);
 }
 
+/**
+ * Asserts the RootRay toolbar URL tracks the preview's real top-level
+ * location. Waits for `previewPage.url()` to satisfy `match` (string
+ * suffix or RegExp), then requires `.preview-url` to converge to that
+ * exact same URL — no tolerance for a stale toolbar location.
+ */
+export async function expectToolbarUrl(appPage, previewPage, match, timeoutMs = 15_000) {
+  await until(
+    async () => {
+      const u = previewPage.url();
+      return typeof match === "string" ? u.endsWith(match) : match.test(u);
+    },
+    `preview location to reach ${match}`,
+    timeoutMs,
+  );
+  const actual = previewPage.url();
+  await until(
+    async () => (await appPage.locator(".preview-url").inputValue()) === actual,
+    `toolbar URL to equal preview location ${actual}`,
+    timeoutMs,
+  );
+  return actual;
+}
+
 /** Kills the installed app and its whole process tree. */
 export async function killApp(appProc) {
   try {

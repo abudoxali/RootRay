@@ -32,6 +32,7 @@ import {
   childProcs,
   EXE,
   existsSync,
+  expectToolbarUrl,
   killApp,
   launchApp,
   makeShotDir,
@@ -54,6 +55,11 @@ const EDITED_SOURCE = ORIGINAL_SOURCE.replace("Count is {count}", "Count is now 
 const MALFORMED_SOURCE = EDITED_SOURCE.replace("</button>", "<button>");
 assert.notEqual(EDITED_SOURCE, ORIGINAL_SOURCE, "edit needle must exist in fixture");
 assert.notEqual(MALFORMED_SOURCE, EDITED_SOURCE, "malformed edit needle must exist in fixture");
+
+const APP_TARGET = join(FIXTURE, "src", "App.tsx");
+const APP_ORIGINAL = readFileSync(APP_TARGET, "utf8");
+const APP_EDITED = APP_ORIGINAL.replace("Details route", "Details route v2");
+assert.notEqual(APP_EDITED, APP_ORIGINAL, "app edit needle must exist in fixture");
 
 async function main() {
   assert.ok(existsSync(EXE), `installed exe missing: ${EXE}`);
@@ -276,7 +282,83 @@ async function main() {
       20_000,
     );
     await waitText(devPage, "Inspector fixture", 30_000);
+    // The toolbar URL must reflect the preview's real location — strictly.
+    assert.equal(await urlInput.inputValue(), devPage.url());
     console.log("  ok  toolbar: navigate · back · forward · reload all work");
+
+    // ---- SPA/history navigation: the toolbar URL tracks the preview ---------
+    const home = base;
+    await urlInput.fill(home);
+    await urlInput.press("Enter");
+    await expectToolbarUrl(appPage, devPage, home);
+    await waitText(devPage, "Inspector fixture", 30_000);
+
+    // Client-side navigation through the fixture's own history.pushState link.
+    await devPage.locator("a.spa-link").click();
+    await waitText(devPage, "Details route", 15_000);
+    await expectToolbarUrl(appPage, devPage, "/details");
+    console.log("  ok  React client-side navigation tracked by the toolbar");
+
+    // Inspect + source mapping still work on the SPA destination.
+    await appPage.getByRole("button", { name: "Inspect", exact: true }).click();
+    await waitText(appPage, "Inspecting", 15_000);
+    const details = devPage.locator(".spa-details");
+    await details.hover();
+    await devPage.locator(".rr-box").waitFor({ timeout: 15_000 });
+    await details.click();
+    await appPage.locator(".selection").waitFor({ timeout: 15_000 });
+    assert.equal((await appPage.locator(".sel-file").innerText()).trim(), "src/App.tsx");
+    const appEditor = appPage.locator(".qeditor");
+    await appEditor.waitFor({ timeout: 15_000 });
+    assert.match(await appEditor.locator(".qe-path").innerText(), /App\.tsx/);
+
+    // Quick Edit + HMR apply on the pushState'd route.
+    await appPage.locator(".cm-line").first().click();
+    await appPage.keyboard.press("ControlOrMeta+a");
+    await appPage.keyboard.insertText(APP_EDITED);
+    await appPage.getByRole("button", { name: "Save", exact: true }).click();
+    await waitText(appPage, "Saved", 15_000);
+    await waitText(devPage, "Details route v2", 20_000);
+    console.log("  ok  inspect · source mapping · Quick Edit · HMR after SPA nav");
+
+    await appPage.locator("button", { hasText: "Stop Inspecting" }).click();
+    await devPage.waitForFunction(() => window.__ROOTRAY_RUNTIME__?.isInspecting?.() === false, {
+      timeout: 15_000,
+    });
+
+    // Hash navigation and history traversal, each strictly tracked.
+    await devPage.evaluate(() => {
+      window.location.hash = "about";
+    });
+    await expectToolbarUrl(appPage, devPage, "/details#about");
+    await devPage.evaluate(() => history.back());
+    await expectToolbarUrl(appPage, devPage, "/details");
+    await devPage.evaluate(() => history.back());
+    await expectToolbarUrl(appPage, devPage, home);
+    await devPage.evaluate(() => history.forward());
+    await expectToolbarUrl(appPage, devPage, "/details");
+    console.log("  ok  hash navigation + back/forward tracked");
+
+    // Rapid push ×2 then back ×2 / forward ×2 — final location must win.
+    await devPage.evaluate(() => {
+      history.pushState({}, "", "/s1");
+      history.pushState({}, "", "/s2");
+    });
+    await expectToolbarUrl(appPage, devPage, "/s2");
+    await devPage.evaluate(() => {
+      history.back();
+      history.back();
+    });
+    await expectToolbarUrl(appPage, devPage, "/details");
+    await devPage.evaluate(() => {
+      history.forward();
+      history.forward();
+    });
+    await expectToolbarUrl(appPage, devPage, "/s2");
+    console.log("  ok  rapid navigation converges — no stale URL survives");
+
+    await devPage.goto(home);
+    await waitText(devPage, "Inspector fixture", 30_000);
 
     // ---- popup policy: local window.open navigates the preview itself -------
     await devPage.evaluate(() => window.open("?popup=1"));
@@ -328,6 +410,7 @@ async function main() {
     console.log("\nINSTALLED GOLDEN PATH (INTERNAL PREVIEW): PASS");
   } finally {
     writeFileSync(EDIT_TARGET, ORIGINAL_SOURCE, "utf8");
+    writeFileSync(APP_TARGET, APP_ORIGINAL, "utf8");
     await cdp?.close().catch(() => undefined);
     await killApp(appProc);
   }

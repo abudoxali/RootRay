@@ -35,6 +35,7 @@ import {
   childProcs,
   EXE,
   existsSync,
+  expectToolbarUrl,
   killApp,
   launchApp,
   makeShotDir,
@@ -402,6 +403,19 @@ async function main() {
       "click-to-source opened a different file than the selection reported",
     );
     console.log(`  ok  ${results.length} elements across ${files.size} authored files`);
+
+    // ---- history navigation: the toolbar URL must track the preview --------
+    await appPage.locator("button", { hasText: "Stop Inspecting" }).click();
+    await devPage.waitForFunction(() => window.__ROOTRAY_RUNTIME__?.isInspecting?.() === false, {
+      timeout: 15_000,
+    });
+    const loginPath = new URL("/login", appUrl).href;
+    await expectToolbarUrl(appPage, devPage, loginPath);
+    await devPage.evaluate(() => history.pushState({}, "", "/login?view=spa"));
+    await expectToolbarUrl(appPage, devPage, "/login?view=spa");
+    await devPage.evaluate(() => history.back());
+    await expectToolbarUrl(appPage, devPage, loginPath);
+    console.log("  ok  real-project history navigation tracked by the toolbar");
 
     // ---- Stop → preview teardown + owned tree exits + scratch cleaned ------
     await appPage.locator(".runner-actions button", { hasText: "Stop" }).first().click();

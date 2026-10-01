@@ -30,6 +30,7 @@ import {
   childProcs,
   EXE,
   existsSync,
+  expectToolbarUrl,
   killApp,
   launchApp,
   makeShotDir,
@@ -187,13 +188,98 @@ async function main() {
       await devPage.locator("h1", { hasText: "About RootRay" }).getAttribute("data-rootray-file"),
       "app/about/page.tsx",
     );
-    // The toolbar URL followed the client-side navigation.
-    await until(
-      async () => (await appPage.locator(".preview-url").inputValue()).includes("/about"),
-      "preview URL to track client-side navigation",
-      15_000,
-    ).catch(() => console.log("  (note: toolbar URL did not track client-side nav — non-fatal)"));
+    // The toolbar URL must track the client-side navigation — strictly.
+    await expectToolbarUrl(appPage, devPage, "/about");
     console.log("  ok  route navigation keeps instrumentation (app router)");
+
+    // ---- inspect on the SPA destination → source mapping still works --------
+    await appPage.getByRole("button", { name: "Inspect", exact: true }).click();
+    await waitText(appPage, "Inspecting", 15_000);
+    const aboutH1 = devPage.locator("h1", { hasText: "About RootRay" });
+    await aboutH1.hover();
+    await devPage.locator(".rr-box").waitFor({ timeout: 15_000 });
+    await aboutH1.click();
+    await appPage.locator(".selection").waitFor({ timeout: 15_000 });
+    assert.equal((await appPage.locator(".sel-file").innerText()).trim(), "app/about/page.tsx");
+    await appPage.locator("button", { hasText: "Stop Inspecting" }).click();
+    await devPage.waitForFunction(() => window.__ROOTRAY_RUNTIME__?.isInspecting?.() === false, {
+      timeout: 15_000,
+    });
+    console.log("  ok  inspect + source mapping on the SPA destination page");
+
+    // ---- URL sync: history API, hash, back/forward, rapid, toolbar ----------
+    // History stack evolves as we go — assertions below track it exactly.
+    await devPage.evaluate(() => history.pushState({}, "", "/pushed-state"));
+    await expectToolbarUrl(appPage, devPage, "/pushed-state");
+    console.log("  ok  toolbar URL tracks history.pushState");
+
+    await devPage.evaluate(() => history.replaceState({}, "", "/replaced-state"));
+    await expectToolbarUrl(appPage, devPage, "/replaced-state");
+    console.log("  ok  toolbar URL tracks history.replaceState");
+
+    await devPage.evaluate(() => {
+      window.location.hash = "section-x";
+    });
+    await expectToolbarUrl(appPage, devPage, "/replaced-state#section-x");
+    console.log("  ok  toolbar URL tracks hash navigation");
+
+    await devPage.evaluate(() => history.back());
+    await expectToolbarUrl(appPage, devPage, "/replaced-state");
+    await devPage.evaluate(() => history.back());
+    await expectToolbarUrl(appPage, devPage, "/about");
+    await devPage.evaluate(() => history.forward());
+    await expectToolbarUrl(appPage, devPage, "/replaced-state");
+    console.log("  ok  toolbar URL tracks history.back / history.forward");
+
+    // Rapid A→B→C then Back→Back/Forward→Forward — the final location must
+    // win; no stale event may overwrite it.
+    await devPage.evaluate(() => {
+      history.pushState({}, "", "/rapid-1");
+      history.pushState({}, "", "/rapid-2");
+      history.pushState({}, "", "/rapid-3");
+    });
+    await expectToolbarUrl(appPage, devPage, "/rapid-3");
+    await devPage.evaluate(() => {
+      history.back();
+      history.back();
+    });
+    await expectToolbarUrl(appPage, devPage, "/rapid-1");
+    await devPage.evaluate(() => {
+      history.forward();
+      history.forward();
+    });
+    await expectToolbarUrl(appPage, devPage, "/rapid-3");
+    console.log("  ok  rapid navigation converges — last location wins");
+
+    // The toolbar's own Back/Forward buttons track the same location.
+    await appPage.locator('button[aria-label="Back"]').click();
+    await expectToolbarUrl(appPage, devPage, "/rapid-2");
+    await appPage.locator('button[aria-label="Forward"]').click();
+    await expectToolbarUrl(appPage, devPage, "/rapid-3");
+    console.log("  ok  toolbar Back/Forward buttons keep the URL in sync");
+
+    // Typed toolbar navigation is a full document load — URL must match.
+    const urlInput = appPage.locator(".preview-url");
+    const home = appUrl.endsWith("/") ? appUrl : `${appUrl}/`;
+    await urlInput.fill(home);
+    await urlInput.press("Enter");
+    await expectToolbarUrl(appPage, devPage, home);
+    await waitText(devPage, "Inspector fixture", 30_000);
+    console.log("  ok  typed toolbar navigation syncs the URL");
+
+    // Reload keeps the location; a page-global marker must not survive it.
+    await devPage.evaluate(() => {
+      window.__rr_marker = 1;
+    });
+    await appPage.locator('button[aria-label="Reload"]').click();
+    await until(
+      async () => (await devPage.evaluate(() => window.__rr_marker)) === undefined,
+      "preview reload to clear page globals",
+      20_000,
+    );
+    await waitText(devPage, "Inspector fixture", 30_000);
+    await expectToolbarUrl(appPage, devPage, home);
+    console.log("  ok  reload keeps the toolbar URL correct");
 
     // ---- Stop → preview teardown + process tree cleanup -----------------------
     await devPage.goto(appUrl.endsWith("/") ? appUrl : `${appUrl}/`);
