@@ -67,6 +67,9 @@ fixed real defects:
   **4,190,912 bytes**, SHA-256
   `83E60E3FC1536BF119EF7A9D65F7376DCCD0D96BA7240097A5534649119AE0F9`;
   silent install → launch → verified → clean teardown.
+- **CI:** run `36930865061` — `completed / success` on the corrective-pass
+  product commit (lint, typecheck, Vitest, full Playwright E2E, Rust
+  tests/checks, production build all green).
 
 ### Phase 02 final acceptance (2026-10-01)
 
