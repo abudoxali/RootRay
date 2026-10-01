@@ -73,6 +73,13 @@
   executable, installer, uninstaller, Start Menu, taskbar and Alt+Tab
   surfaces; the in-app header has no interior icon. Covered by the
   committed ICO generation/configuration tests.
+- **Final candidate artifact:** `RootRay_0.3.0_x64-setup.exe` —
+  **4,189,851 bytes**, SHA-256
+  `0BED4EDFC2907C973ABB2E9B60B8B87BC970876F993CE7C970854C9E36E86AB0`;
+  silent install → launch (no auto-run) → terminate → uninstall →
+  binary removal PASS under Windows PowerShell.
+- **CI:** run `36906354904` — `completed / success` on the Phase 02
+  candidate; a follow-up run gates this documentation commit.
 - **Remaining blockers:** none. Human acceptance and green CI on the
   exact pushed SHA remain mandatory; v0.3.0 remains unpublished and
   untagged until explicit approval.
