@@ -39,11 +39,12 @@ import {
   waitText,
 } from "./installed-preview.mjs";
 
-const PROJECT = "C:\\Users\\Abud\\Desktop\\git hub\\ClientFlow-CRM";
+const PROJECT = process.argv[2] ?? "C:\\Users\\Abud\\Desktop\\git hub\\ClientFlow-CRM";
 const CHANGE_TARGET = join(REPO_ROOT, "fixtures", "static-web");
 const SHOTS = makeShotDir("installed-verify-layout");
 const CDP_PORT = 9235;
 const PICK_PS1 = join(REPO_ROOT, "tests", "e2e", "pick-folder.ps1");
+const SKIP_CHANGE_PROJECT = process.argv.includes("--skip-change-project");
 
 const box = async (page, sel) => page.locator(sel).first().boundingBox();
 
@@ -146,6 +147,10 @@ async function main() {
       afterExplorer.width > hostBefore.width + 40,
       `host did not grow when explorer hid (${hostBefore.width} -> ${afterExplorer.width})`,
     );
+    await appPage.locator('button[aria-label="Toggle explorer (Ctrl+B)"]').click();
+    await appPage.locator(".wb-left:not(.wb-hidden)").waitFor({ timeout: 5_000 });
+    await appPage.locator('button[aria-label="Toggle explorer (Ctrl+B)"]').click();
+    await appPage.locator(".wb-left.wb-hidden").waitFor({ state: "attached", timeout: 5_000 });
 
     await appPage.locator('button[aria-label="Toggle inspector"]').click();
     await appPage.locator(".wb-right.wb-hidden").waitFor({ state: "attached", timeout: 5_000 });
@@ -208,6 +213,14 @@ async function main() {
     await assertNoIllegalTransition(appPage, "exit focus");
     console.log("  ok  exit focus restores the user's pane toggles");
 
+    await appPage.getByRole("tab", { name: "Preview", exact: true }).click();
+    await appPage.locator(".preview-host").waitFor({ timeout: 5_000 });
+    assert.equal(
+      await appPage.locator(".wb-code").count(),
+      0,
+      "Code pane remained in Preview view",
+    );
+
     // ---- Split + resize ------------------------------------------------------
     await appPage.locator("button", { hasText: "Split" }).click();
     await appPage.locator('hr[aria-label="Preview/Code split"]').waitFor({ timeout: 5_000 });
@@ -261,6 +274,17 @@ async function main() {
     );
     await shot(appPage, SHOTS, "04-inspect-source");
     console.log(`  ok  inspected <h1> -> ${selFile} revealed (inspector hidden)`);
+
+    await appPage.locator('button[aria-label="Code Focus"]').click();
+    await appPage.locator(".qeditor").waitFor({ timeout: 5_000 });
+    assert.equal(
+      await appPage.locator(".preview-host").count(),
+      0,
+      "Preview remained in Code Focus",
+    );
+    await appPage.getByRole("button", { name: "Exit Focus" }).click();
+    await appPage.locator(".preview-host").waitFor({ timeout: 5_000 });
+    console.log("  ok  Code Focus gives source the workbench and restores Split");
 
     // ---- Restore inspector → same selection; hide again → source stays -------
     await appPage.locator('button[aria-label="Toggle inspector"]').click();
@@ -321,6 +345,14 @@ async function main() {
     );
     await assertNoIllegalTransition(appPage, "stop");
     console.log("  ok  Stop — no illegal transition");
+
+    if (SKIP_CHANGE_PROJECT) {
+      const gitAfter = gitPorcelain();
+      assert.equal(gitAfter, gitBefore, "project repo state changed during verification");
+      console.log("  skip  native Change Project picker continuation (explicitly disabled)");
+      console.log("\nINSTALLED LAYOUT + TRANSITION VERIFICATION: PASS");
+      return;
+    }
 
     // ---- Change Project WHILE RUNNING -----------------------------------------
     // Run again, then change. The pick happens before the stop, so the
@@ -407,7 +439,7 @@ async function main() {
 
     console.log("\nINSTALLED LAYOUT + TRANSITION VERIFICATION: PASS");
   } finally {
-    await cdp?.close().catch(() => {});
+    await cdp?.close().catch(() => undefined);
     await killApp(appProc);
   }
 }

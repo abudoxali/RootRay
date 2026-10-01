@@ -127,7 +127,22 @@ async function inspectElement(appPage, devPage, cssSel, clickPos) {
   await devPage.locator(".rr-box").waitFor({ timeout: 15_000 });
   // Center clicks land on the innermost nested element — correct inspector
   // behavior. To select a container's own JSX site, aim at its padding.
-  await el.click(clickPos ? { position: clickPos } : undefined);
+  let position = clickPos;
+  if (clickPos === "self") {
+    position = await el.evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      for (let y = 1; y < rect.height; y += 2) {
+        for (let x = 1; x < rect.width; x += 2) {
+          if (document.elementFromPoint(rect.left + x, rect.top + y) === node) return { x, y };
+        }
+      }
+      return null;
+    });
+  }
+  if (clickPos === "self") {
+    assert.ok(position !== null, `${cssSel} has no directly clickable pixel`);
+  }
+  await el.click(position ? { position } : undefined);
 
   await appPage.locator(".selection").waitFor({ state: "attached", timeout: 15_000 });
   const selTag = (await appPage.locator(".sel-tag").innerText()).trim();
@@ -240,6 +255,9 @@ async function main() {
 
   seedSettings(PROJECT);
   const appProc = launchApp(CDP_PORT);
+  appProc.on("exit", (code, signal) => {
+    console.log(`installed app exited: code=${code ?? "null"} signal=${signal ?? "none"}`);
+  });
 
   const results = [];
   let cdp;
@@ -290,6 +308,11 @@ async function main() {
     await shot(appPage, SHOTS, "03-bridge-connected");
     console.log("  ok  inspector bridge connected from the embedded preview");
 
+    const emailInput = devPage.locator("input#email");
+    await emailInput.click();
+    assert.equal(await emailInput.evaluate((input) => document.activeElement === input), true);
+    console.log("  ok  Interact mode focused the real email input");
+
     // ---- Inspect Mode → select representative real elements ---------------
     await appPage.locator("button", { hasText: "Inspect UI" }).click();
     await waitText(appPage, "Inspecting", 15_000);
@@ -298,6 +321,12 @@ async function main() {
       { css: "h1", pos: null }, // page.tsx — heading ("ClientFlow" / company name)
       // Card's own box: the py-4 top padding strip above CardHeader.
       { css: '[data-slot="card"]', pos: { x: 60, y: 6 } }, // card.tsx
+      {
+        css: '[data-slot="card-header"]',
+        pos: "self",
+        expectedFile: "src/components/ui/card.tsx",
+        expectedComponent: "CardHeader",
+      },
       {
         css: 'label[for="email"]',
         pos: null,
@@ -320,12 +349,45 @@ async function main() {
       console.log(
         `  ok  <${r.tag}> → ${r.file}:${r.line}:${r.col}${component} | reveal: ${r.revealed ?? "—"} | preview: ${(r.previewLine ?? "").slice(0, 60)}`,
       );
-      await appPage
-        .locator('button[aria-label="Clear selection"]')
-        .click()
-        .catch(() => undefined);
       await sleep(300);
     }
+
+    const card = results.find((result) => result.css === '[data-slot="card"]');
+    const cardHeader = results.find((result) => result.css === '[data-slot="card-header"]');
+    assert.ok(card && cardHeader, "Card same-file selections missing");
+    assert.equal(card.file, "src/components/ui/card.tsx");
+    assert.equal(cardHeader.file, card.file);
+    assert.notEqual(cardHeader.line, card.line, "same-file reselection did not refocus its line");
+
+    const latest = results.find((result) => result.css === "input#email");
+    assert.ok(latest, "input selection missing");
+    await devPage
+      .locator('[data-slot="card"]')
+      .first()
+      .click({ position: { x: 60, y: 6 } });
+    await emailInput.click();
+    await until(
+      async () => {
+        const selectedFile = await appPage
+          .locator(".sel-file")
+          .innerText()
+          .then((text) => text.trim())
+          .catch(() => null);
+        const editorPath = await appPage
+          .locator(".qe-path")
+          .innerText()
+          .then((text) => text.trim())
+          .catch(() => null);
+        return selectedFile === latest.file && editorPath === latest.file;
+      },
+      "rapid selection latest source",
+      30_000,
+    );
+    const latestSource = readFileSync(join(PROJECT, latest.file), "utf8");
+    const latestLine = latestSource.split(/\r?\n/)[latest.line - 1]?.trim();
+    await assertRenderedCode(appPage, latestSource, latestLine, latest.file);
+    assert.equal((await appPage.locator(".sel-component").innerText()).trim(), latest.component);
+    console.log(`  ok  rapid Card → input selection settled on ${latest.file}:${latest.line}`);
 
     const files = new Set(results.map((r) => r.file));
     assert.ok(files.size >= 3, `need ≥3 distinct authored files, got ${[...files].join(", ")}`);

@@ -50,7 +50,9 @@ const CDP_PORT = 9229;
 const EDIT_TARGET = join(FIXTURE, "src", "components", "ActionButton.tsx");
 const ORIGINAL_SOURCE = readFileSync(EDIT_TARGET, "utf8");
 const EDITED_SOURCE = ORIGINAL_SOURCE.replace("Count is {count}", "Count is now {count}");
+const MALFORMED_SOURCE = EDITED_SOURCE.replace("</button>", "<button>");
 assert.notEqual(EDITED_SOURCE, ORIGINAL_SOURCE, "edit needle must exist in fixture");
+assert.notEqual(MALFORMED_SOURCE, EDITED_SOURCE, "malformed edit needle must exist in fixture");
 
 async function main() {
   assert.ok(existsSync(EXE), `installed exe missing: ${EXE}`);
@@ -171,7 +173,7 @@ async function main() {
     await appPage.locator(".cm-line").first().click();
     await appPage.keyboard.press("ControlOrMeta+a");
     await appPage.keyboard.insertText(EDITED_SOURCE);
-    await appPage.locator(".qe-foot button", { hasText: "Save" }).click();
+    await appPage.getByRole("button", { name: "Save", exact: true }).click();
     await waitText(appPage, "Saved", 15_000);
     await shot(appPage, SHOTS, "05-saved");
 
@@ -181,6 +183,39 @@ async function main() {
       .waitFor({ timeout: 20_000 });
     await shot(devPage, SHOTS, "06-hmr-in-preview");
     console.log("  ok  Quick Edit saved; Vite HMR updated the embedded preview");
+
+    await appPage.locator(".cm-line").first().click();
+    await appPage.keyboard.press("ControlOrMeta+a");
+    await appPage.keyboard.insertText(MALFORMED_SOURCE);
+    await appPage.getByRole("button", { name: "Save", exact: true }).click();
+    const sawCompileError = await Promise.race([
+      devPage.locator("vite-error-overlay").waitFor({ state: "visible", timeout: 30_000 }),
+      devPage.locator("text=Inspector fixture").waitFor({ state: "hidden", timeout: 30_000 }),
+    ])
+      .then(() => true)
+      .catch(() => false);
+    assert.equal(sawCompileError, true, "malformed JSX did not surface a Vite error");
+    assert.equal((await appPage.locator(".run-state").innerText()).trim(), "Running");
+    await appPage.locator(".preview-toolbar").waitFor({ timeout: 5_000 });
+
+    await sleep(2_000);
+    await appPage.locator(".cm-line").first().click();
+    await appPage.keyboard.press("ControlOrMeta+a");
+    await appPage.keyboard.insertText(EDITED_SOURCE);
+    await appPage.getByRole("button", { name: "Save", exact: true }).click();
+    try {
+      await devPage
+        .locator("button", { hasText: "Count is now 1" })
+        .first()
+        .waitFor({ timeout: 20_000 });
+    } catch {
+      await devPage.reload();
+      await devPage
+        .locator("button", { hasText: "Count is now 1" })
+        .first()
+        .waitFor({ timeout: 30_000 });
+    }
+    console.log("  ok  malformed JSX surfaced an error; valid source recovered without restarting");
 
     // ---- re-inspect after HMR ----------------------------------------------
     await appPage.getByRole("tab", { name: "Code", exact: true }).click();
