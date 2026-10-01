@@ -144,7 +144,22 @@ export function ProjectView() {
     });
   };
 
+  // A pane hidden only by the responsive policy still has its preference
+  // set — but the toggle renders "off" (it follows effective visibility),
+  // so a click here would silently clear the preserved preference without
+  // changing anything on screen. Explain instead of destroying intent;
+  // the pane returns automatically once the window has room again.
+  const autoHiddenNotice = (pane: string) =>
+    dispatch({
+      type: "notice",
+      message: `${pane} is hidden to keep the workbench usable at this width — it returns automatically when the window is wider.`,
+      isError: false,
+    });
   const toggleExplorer = () => {
+    if (layout.explorerVisible && layout.autoExplorer) {
+      autoHiddenNotice("Explorer");
+      return;
+    }
     if (explorerVis) focusFallback(leftPaneRef, explorerBtnRef);
     dispatch({
       type: "layout-update",
@@ -152,6 +167,10 @@ export function ProjectView() {
     });
   };
   const toggleInspector = () => {
+    if (layout.inspectorVisible && layout.autoInspector) {
+      autoHiddenNotice("Inspector");
+      return;
+    }
     if (inspectorVis) focusFallback(rightPaneRef, inspectorBtnRef);
     dispatch({
       type: "layout-update",
