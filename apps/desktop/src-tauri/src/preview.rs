@@ -127,6 +127,67 @@ fn page_load_hook(app: AppHandle) -> impl Fn(Webview, tauri::webview::PageLoadPa
     }
 }
 
+/// Reads the webview's own `Source` property — the real top-level
+/// location — and syncs it into the preview snapshot. Page-supplied
+/// values are never trusted for the toolbar.
+#[cfg(windows)]
+fn sync_url_from_source(
+    app: &AppHandle,
+    sender: Option<webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2>,
+) {
+    let Some(wv2) = sender else { return };
+    let mut raw = windows::core::PWSTR::null();
+    if unsafe { wv2.Source(&mut raw) }.is_err() {
+        return;
+    }
+    let url = webview2_com::take_pwstr(raw);
+    if let Some(mgr) = app.try_state::<Arc<PreviewManager>>() {
+        mgr.transition(app, move |s| s.url = Some(url));
+    }
+}
+
+/// Keeps the toolbar URL truthful across same-document navigation.
+///
+/// `PageLoadEvent` only covers full document loads; `history.pushState`/
+/// `replaceState`, router navigations, `popstate` and hash changes never
+/// produce one. WebView2 raises `SourceChanged`/`HistoryChanged` for
+/// those — subscribing to both covers whichever WebView2 surfaces for a
+/// given change. Handlers re-read `Source` at fire time and updates flow
+/// through `transition`'s generation counter, so an older event can never
+/// overwrite a newer location.
+#[cfg(windows)]
+fn hook_location_sync(app: &AppHandle, wv: &Webview) {
+    use webview2_com::{HistoryChangedEventHandler, SourceChangedEventHandler};
+    let app = app.clone();
+    let _ = wv.with_webview(move |platform| {
+        let Ok(wv2) = (unsafe { platform.controller().CoreWebView2() }) else {
+            return;
+        };
+        let app_a = app.clone();
+        unsafe {
+            let _ = wv2.add_SourceChanged(
+                &SourceChangedEventHandler::create(Box::new(move |sender, _args| {
+                    sync_url_from_source(&app_a, sender);
+                    Ok(())
+                })),
+                std::ptr::null_mut(),
+            );
+            let _ = wv2.add_HistoryChanged(
+                &HistoryChangedEventHandler::create(Box::new(move |sender, _args| {
+                    sync_url_from_source(&app, sender);
+                    Ok(())
+                })),
+                std::ptr::null_mut(),
+            );
+        }
+    });
+}
+
+/// No-op off Windows — wry's PageLoadEvent is the only cross-platform
+/// location signal; same-document sync is a WebView2 capability here.
+#[cfg(not(windows))]
+fn hook_location_sync(_app: &AppHandle, _wv: &Webview) {}
+
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewRect {
@@ -203,9 +264,10 @@ pub async fn preview_create(
         })?;
 
     mgr.with(|i| {
-        i.webview = Some(child);
+        i.webview = Some(child.clone());
         i.modal_hidden = false;
     });
+    hook_location_sync(&app, &child);
     mgr.transition(&app, |s| {
         s.phase = PreviewPhase::Loading;
         s.url = Some(url);
