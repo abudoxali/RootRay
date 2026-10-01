@@ -163,8 +163,8 @@ fixed real defects:
   executable, installer, uninstaller, Start Menu, taskbar and Alt+Tab
   surfaces; the in-app header has no interior icon. Covered by the
   committed ICO generation/configuration tests.
-- **Final candidate artifact:** `RootRay_0.3.0_x64-setup.exe` —
-  **4,189,851 bytes**, SHA-256
+- **Candidate artifact of that pass (since superseded):**
+  `RootRay_0.3.0_x64-setup.exe` — **4,189,851 bytes**, SHA-256
   `0BED4EDFC2907C973ABB2E9B60B8B87BC970876F993CE7C970854C9E36E86AB0`;
   silent install → launch (no auto-run) → terminate → uninstall →
   binary removal PASS under Windows PowerShell.
@@ -292,9 +292,11 @@ fixed real defects:
 
 ### Current development installer
 
-- `RootRay_0.3.0_x64-setup.exe` — **4,190,912 bytes**, SHA-256
-  `83E60E3FC1536BF119EF7A9D65F7376DCCD0D96BA7240097A5534649119AE0F9`
-  (Phase 02 corrective-pass candidate; supersedes earlier artifacts)
+- `RootRay_0.3.0_x64-setup.exe` — **4,198,122 bytes**, SHA-256
+  `3B3ABA817D4EEA8EAE24154B7CFECECF38708B499C1E0BEE24F1BDA578673404`
+  (Phase 02 correctness-closure candidate; supersedes all earlier v0.3
+  candidate artifacts, including the 4,190,912-byte corrective-pass
+  build `83E60E3F…AE0F9`)
 
 - **Product candidate source identity:** read the final product-code
   commit with `git rev-parse HEAD` after the candidate commit.
