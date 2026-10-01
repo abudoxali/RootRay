@@ -51,6 +51,10 @@ style. Dates are UTC. Authoritative detail: [STATUS.md](STATUS.md).
 - Toggling a pane that the responsive policy had auto-hidden silently
   discarded the saved visibility preference; the toggle now explains
   that the pane is hidden for width and returns when there is room.
+- Preview toolbar location now stays synchronized with client-side
+  SPA/history navigation (`pushState`/`replaceState`, router links,
+  back/forward, hash changes) — driven by the WebView2
+  `SourceChanged`/`HistoryChanged` events instead of page-load only.
 - Dev-server startup failures (missing dependencies, spawn errors)
   reach a visible failed state with useful output and a working Retry —
   no blank window, no stuck Preview, no orphaned process tree.

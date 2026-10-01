@@ -27,6 +27,48 @@
 - Workspace, desktop and Tauri/NSIS builds: **PASS**
 - Installer smoke: **PASS**
 
+### Phase 02 correctness-closure pass (2026-10-02)
+
+- **SPA toolbar URL synchronization: FIXED** — the embedded Preview
+  toolbar previously kept the last full-document URL through client-side
+  navigation. Root cause: `PreviewState.url` was only updated by the
+  page-load hook and explicit create/navigate commands; same-document
+  history changes emit no page-load event, so the snapshot went stale
+  while the page itself navigated correctly. Fix: `preview_create`
+  subscribes to the child WebView2's native `SourceChanged` and
+  `HistoryChanged` events (`webview2-com` via `Webview::with_webview` →
+  `ICoreWebView2Controller::CoreWebView2`); each event re-reads the
+  control's own `Source` property and writes it through the existing
+  generation-guarded `transition`, so page-supplied URLs are never
+  trusted and an older event can never overwrite a newer location.
+  No IPC privilege was granted to the preview and the loopback
+  navigation policy is unchanged.
+- **Strict URL regression coverage** — the previous non-fatal tolerance
+  in `installed-golden-next.mjs` is replaced by `expectToolbarUrl`
+  assertions requiring the toolbar input to equal the preview's real
+  location. Covered on the installed build: initial URL, Next App
+  Router client navigation, `pushState`, `replaceState`,
+  `history.back`/`forward`, hash changes, rapid A→B→C plus rapid
+  back×2/forward×2 convergence, the toolbar's own Back/Forward buttons,
+  typed toolbar navigation, reload, and inspect + source mapping on the
+  SPA destination. The React+Vite golden drives the fixture's own
+  pushState link and verifies inspect, Quick Edit and HMR on the
+  destination route; the ClientFlow verifier checks history navigation
+  on the real project.
+- **Re-verified on the new artifact** — installed golden paths
+  (React+Vite, Next.js, static, pnpm monorepo), ClientFlow CRM
+  (exact `label[for="email"]` → `src/components/ui/label.tsx:9:5`),
+  layout/transitions with native Change Project, brand/icons,
+  recovery and generic-DOM (Neon Survivor) all PASS; preview IPC
+  denial unchanged; CodeMirror still paints syntax-highlighted source
+  (refreshed `docs/media` captures). Toolbar layout verified at
+  1600×1000, 1366×768 and the 820×560 minimum — no overflow, controls
+  reachable, long URLs scroll inside the URL field.
+- **Final candidate artifact:** `RootRay_0.3.0_x64-setup.exe` —
+  **4,198,122 bytes**, SHA-256
+  `3B3ABA817D4EEA8EAE24154B7CFECECF38708B499C1E0BEE24F1BDA578673404`;
+  silent install → full installed matrix → verified.
+
 ### Phase 02 corrective pass (2026-10-02)
 
 A full product QA/repair pass against the installed artifact surfaced and
@@ -63,8 +105,8 @@ fixed real defects:
   layout/transitions incl. native Change Project, brand/icons, and
   invalid-project/missing-deps recovery all PASS; full Playwright suite
   **68 passed** on the final code.
-- **Final candidate artifact:** `RootRay_0.3.0_x64-setup.exe` —
-  **4,190,912 bytes**, SHA-256
+- **Artifact (superseded by the correctness-closure pass above):**
+  `RootRay_0.3.0_x64-setup.exe` — **4,190,912 bytes**, SHA-256
   `83E60E3FC1536BF119EF7A9D65F7376DCCD0D96BA7240097A5534649119AE0F9`;
   silent install → launch → verified → clean teardown.
 - **CI:** run `36930865061` — `completed / success` on the corrective-pass
