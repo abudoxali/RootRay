@@ -25,7 +25,7 @@
 import assert from "node:assert/strict";
 import { execSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import {
   allPages,
   assertPreviewHasNoIpc,
@@ -45,7 +45,7 @@ import {
   waitText,
 } from "./installed-preview.mjs";
 
-const PROJECT = "C:\\Users\\Abud\\Desktop\\git hub\\ClientFlow-CRM";
+const PROJECT = process.argv[2] ?? "C:\\Users\\Abud\\Desktop\\git hub\\ClientFlow-CRM";
 const SHOTS = makeShotDir("installed-verify-clientflow");
 const CDP_PORT = 9234;
 
@@ -87,17 +87,18 @@ async function assertRenderedCode(appPage, sourceText, expectedLine, relativePat
   const diagnostics = await appPage.locator(".cm-content").evaluate((content) => {
     const lines = [...document.querySelectorAll(".cm-line")];
     const token = content.querySelector("span");
-    const style = (node) =>
-      node
-        ? ((s) => ({
-            color: s.color,
-            backgroundColor: s.backgroundColor,
-            opacity: s.opacity,
-            visibility: s.visibility,
-            display: s.display,
-            fontSize: s.fontSize,
-          }))(getComputedStyle(node))
-        : null;
+    const style = (node) => {
+      if (!node) return null;
+      const computed = getComputedStyle(node);
+      return {
+        color: computed.color,
+        backgroundColor: computed.backgroundColor,
+        opacity: computed.opacity,
+        visibility: computed.visibility,
+        display: computed.display,
+        fontSize: computed.fontSize,
+      };
+    };
     return {
       contentTextLength: content.textContent?.length ?? 0,
       contentInnerText: content.innerText.slice(0, 160),
@@ -248,7 +249,7 @@ async function main() {
     console.log("attached to installed app UI");
 
     // ---- Open Project → analyze (auto-restored via lastProject) ----------
-    await waitText(appPage, "ClientFlow-CRM", 60_000);
+    await waitText(appPage, basename(PROJECT), 60_000);
     const facts = await appPage.locator(".facts").innerText();
     assert.match(facts, /Next\.js 16\.2\.12/, `framework not resolved:\n${facts}`);
     assert.match(facts, /\bnpm\b/, "package manager not resolved to npm");
@@ -315,15 +316,14 @@ async function main() {
         console.log(`  ok  explicit Label target: ${t.css} → ${r.file}:${r.line}:${r.col}`);
       }
       results.push(r);
+      const component = r.component ? ` · <${r.component}>` : "";
       console.log(
-        `  ok  <${r.tag}> → ${r.file}:${r.line}:${r.col}` +
-          `${r.component ? ` · <${r.component}>` : ""}` +
-          ` | reveal: ${r.revealed ?? "—"} | preview: ${(r.previewLine ?? "").slice(0, 60)}`,
+        `  ok  <${r.tag}> → ${r.file}:${r.line}:${r.col}${component} | reveal: ${r.revealed ?? "—"} | preview: ${(r.previewLine ?? "").slice(0, 60)}`,
       );
       await appPage
         .locator('button[aria-label="Clear selection"]')
         .click()
-        .catch(() => {});
+        .catch(() => undefined);
       await sleep(300);
     }
 
@@ -416,12 +416,11 @@ async function main() {
     console.log("\nCLIENTFLOW-CRM INSTALLED VERIFICATION (INTERNAL PREVIEW): PASS");
     for (const r of results) {
       console.log(
-        `  <${r.tag}> ${r.file}:${r.line}:${r.col} comp=${r.component ?? "—"}` +
-          ` styles=${r.styles ? "yes" : "no"} confidence=exact(stamped)`,
+        `  <${r.tag}> ${r.file}:${r.line}:${r.col} comp=${r.component ?? "—"} styles=${r.styles ? "yes" : "no"} confidence=exact(stamped)`,
       );
     }
   } finally {
-    await cdp?.close().catch(() => {});
+    await cdp?.close().catch(() => undefined);
     await killApp(appProc);
   }
 }

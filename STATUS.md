@@ -3,12 +3,14 @@
 ## Current Development
 
 - **Version:** `v0.3.0-dev`
-- **State:** Manual Acceptance Candidate
+- **Phase:** Phase 01 — v0.3 Release Candidate Closure + Canonical Repository Identity
+- **Canonical repository:** `abudoxali/RootRay`
+- **State:** RELEASE CANDIDATE READY FOR HUMAN ACCEPTANCE
 - **Published:** NO
 - **Tagged:** NO
 - **Stable release:** `v0.2.0` (see **Current Release** below)
-- **Latest functional state:** Workbench Density + Inspector Responsiveness
-  Pass complete on top of the Official App Icon Correction
+- **Latest functional state:** Release-candidate closure complete on top of the
+  Workbench Density + Inspector Responsiveness Pass
 - **Inspect-to-Code:** PASS
 - **Blank editor:** FIXED
 - **Rapid selection stale-read protection:** PASS
@@ -16,17 +18,56 @@
 
 ### Current tests
 
-- Rust: **213 passed**
-- Ignored Rust: **1** — passes explicitly
-- Vitest: **214 passed**
+- Rust: **200 passed**
+- Ignored Rust: **1 passed explicitly**
+- Vitest: **215 passed**
 - Playwright: **67 passed**
 - TypeScript: **PASS**
-- Biome: **0 errors**
+- Biome: **0 errors** (8 existing CSS specificity warnings)
+- Workspace, desktop and Tauri/NSIS builds: **PASS**
 - Installer smoke: **PASS**
+
+### Phase 01 release-candidate closure (2026-10-01)
+
+- **Repository identity:** all active tracked links now use
+  `https://github.com/abudoxali/RootRay`; the stale-owner scan returns zero
+  matches. Settings/About has focused regression coverage for the canonical
+  repository URL.
+- **Repository metadata:** the GitHub homepage is
+  `https://github.com/abudoxali/RootRay/releases/latest`; description and
+  topics were preserved.
+- **Documentation synchronization:** README, SECURITY, CHANGELOG, community
+  links, release-workflow comments and Tauri product description were checked
+  against the current implementation and corrected without expanding scope.
+- **Architecture:** `docs/architecture.md` now describes the v0.3 React/Tauri/
+  core flow, InspectorAdapter paths, embedded child WebView2 Preview, bounds
+  synchronization, IPC isolation, loopback policy, selection transport,
+  CodeMirror handoff, safe-save path and responsive workbench behavior.
+- **Blank-editor regression:** PASS. The automated workbench acceptance requires
+  rendered `.cm-content`/`.cm-line` source and the exact marked line; the
+  installed ClientFlow verifier explicitly covers `label[for="email"]` →
+  `src/components/ui/label.tsx`, non-whitespace CodeMirror text and exact line
+  focus. The implementation was reviewed and required no product-code change.
+- **Installed verification:** the exact fresh installer below passed silent
+  install, resource checks, launch/no-auto-run and uninstall smoke. Reinstalled
+  from the same artifact, the maintained React + Vite fixture passed analyze →
+  Run → embedded Preview → Interact/Inspect → source → edit/save → HMR →
+  re-inspect → Stop, Preview teardown and owned-process/URL shutdown. Preview
+  IPC denial was verified. Official ICO generation/configuration tests passed.
+- **ClientFlow-CRM:** the local checkout was found at
+  `C:\Users\Abud\Desktop\GitHub\ClientFlow CRM`, but `node_modules/next` was
+  absent. The verifier stopped at its dependency precondition, so no new
+  ClientFlow runtime result is claimed in this pass.
+- **Acceptance harness:** fresh-install settings seeding now creates its config
+  directory, and installed workbench checks account for responsive Inspector
+  collapse while preserving Preview + Code priority.
+- **Known remaining release blockers:** none from the local release gate.
+  Human acceptance and successful CI on the exact pushed SHA remain mandatory;
+  v0.3.0 remains unpublished and untagged.
 
 ### Latest visual correction checks
 
-- Desktop Vitest: **102 passed** (`pnpm --filter @rootray/desktop test`)
+- Desktop Vitest: **103 passed** (`pnpm --filter @rootray/desktop test`)
 - Focused Workbench Playwright: **23 passed**
 - Full Playwright regression: **67 passed**
 - TypeScript: **PASS** (`pnpm -r typecheck`)
@@ -104,14 +145,14 @@
 
 ### Current development installer
 
-- `RootRay_0.3.0_x64-setup.exe` — **4,162,162 bytes**, SHA-256
-  `40B6C2F909EC9FC16502B21DE84E94B00996325BDE8CF9A41BBBCB7D686D2A97`
+- `RootRay_0.3.0_x64-setup.exe` — **4,187,697 bytes**, SHA-256
+  `02E6D05177306237E714E7A4A37904EE35FDF8F5C6D2E296E2914AD8265ECD9D`
 
 - **Product candidate source identity:** read the final product-code
   commit with `git rev-parse HEAD` after the candidate commit.
 - **Product candidate CI:** latest pushed candidate CI is reported with
   the final acceptance result for that exact SHA.
-- **Last Updated:** 2026-09-21
+- **Last Updated:** 2026-10-01
 
 > STATUS.md does not hard-code the mutable repository tip. Read the
 > product candidate source SHA and current repository tip from Git;
@@ -124,7 +165,7 @@
 
 - Tag: `v0.2.0` → `29b9b6751a12893a027a1db4ed956398946e675b`
   (annotated, immutable — pushed once, never moved)
-- GitHub Release: https://github.com/3bud-ZC/RootRay/releases/tag/v0.2.0
+- GitHub Release: https://github.com/abudoxali/RootRay/releases/tag/v0.2.0
   (non-draft, non-prerelease)
 - Pre-tag main CI: run `35220278389` on the release SHA — **success**
 - Release workflow: run `35221296320` (tag-triggered) — **success**
@@ -808,7 +849,7 @@ Release Hardening, Windows Packaging & MVP Final Acceptance — **Complete**
 MVP READY — **v0.1.1 published**
 
 - Published patch: `v0.1.1` —
-  https://github.com/3bud-ZC/RootRay/releases/tag/v0.1.1
+  https://github.com/abudoxali/RootRay/releases/tag/v0.1.1
 - Tag: `v0.1.1` → `7fba49a43321f1c2cb167bdaf32edf0ad3097040`
   (annotated, immutable)
 - Release workflow: run `35039871780` (tag push, `v0.1.1`) — **success**
@@ -818,7 +859,7 @@ MVP READY — **v0.1.1 published**
 - Checksum manifest: `RootRay_0.1.1_x64-setup.exe.sha256` (verified
   matching)
 - Prior release: `v0.1.0` —
-  https://github.com/3bud-ZC/RootRay/releases/tag/v0.1.0
+  https://github.com/abudoxali/RootRay/releases/tag/v0.1.0
 - Tag: `v0.1.0` → `62d05f23b05c063aa6f1a93c4d2f1c8971c34302` (annotated,
   immutable)
 - License: **MIT**
@@ -1021,7 +1062,7 @@ WebView2 remains environment-limited (no WebView2 test driver).
   (documented; signing deferred — no cert provided).
 - ~~No LICENSE selected yet~~ — **resolved: MIT**, published with v0.1.0.
 - ~~No public `v0.1.0` tag~~ — **resolved: published** at
-  `github.com/3bud-ZC/RootRay/releases/tag/v0.1.0` with the verified
+  `github.com/abudoxali/RootRay/releases/tag/v0.1.0` with the verified
   Actions installer + checksum manifest attached.
 - Playwright drives a protocol-faithful mock bridge plus a stubbed-IPC
   DOM pass; the Rust bridge itself is covered by the Rust suite.

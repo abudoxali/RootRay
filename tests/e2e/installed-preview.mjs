@@ -63,6 +63,7 @@ export function childProcs(pid) {
  * let override the explicit new preference.
  */
 export function seedSettings(projectDir) {
+  mkdirSync(CFG_DIR, { recursive: true });
   const settings = {
     lastProject: projectDir,
     recentProjects: [projectDir],
@@ -203,11 +204,15 @@ export async function until(predicate, what, timeoutMs = 15_000, step = 250) {
 export async function killApp(appProc) {
   try {
     process.kill(appProc.pid);
-  } catch {}
+  } catch (error) {
+    void error;
+  }
   await sleep(1000);
   try {
     execFileSync("taskkill", ["/PID", String(appProc.pid), "/T", "/F"], { stdio: "ignore" });
-  } catch {}
+  } catch (error) {
+    void error;
+  }
 }
 
 export { existsSync };

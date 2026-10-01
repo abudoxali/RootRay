@@ -156,10 +156,13 @@ async function main() {
     await shot(appPage, SHOTS, "04-click-to-source");
     console.log(`  ok  click-to-source: ${selFile} ${selPos} opened beside the preview`);
 
+    await appPage.getByRole("tab", { name: "Code", exact: true }).click();
+    await appPage.locator(".wb-right").waitFor({ timeout: 10_000 });
     await appPage.locator(".intel-section").first().waitFor({ timeout: 10_000 });
     const intelText = await appPage.locator(".inspector").innerText();
     assert.match(intelText, /ActionButton/, "component intelligence missing");
     await appPage.locator(".boxmodel").waitFor({ timeout: 10_000 });
+    await appPage.getByRole("tab", { name: "Split", exact: true }).click();
     console.log("  ok  component + style intelligence rendered");
 
     // ---- edit in place → save → HMR inside the embedded preview ------------
@@ -180,25 +183,36 @@ async function main() {
     console.log("  ok  Quick Edit saved; Vite HMR updated the embedded preview");
 
     // ---- re-inspect after HMR ----------------------------------------------
+    await appPage.getByRole("tab", { name: "Code", exact: true }).click();
     await appPage.locator('button[aria-label="Clear selection"]').click();
+    await appPage.getByRole("tab", { name: "Split", exact: true }).click();
+    await appPage.locator(".preview-host").waitFor({ timeout: 5_000 });
     await button.click(); // still inspecting — select again
+    await appPage.getByRole("tab", { name: "Code", exact: true }).click();
     await appPage.locator(".selection").waitFor({ timeout: 15_000 });
     assert.equal(
       (await appPage.locator(".sel-file").innerText()).trim(),
       "src/components/ActionButton.tsx",
     );
+    await appPage.getByRole("tab", { name: "Split", exact: true }).click();
     console.log("  ok  re-inspection after HMR resolves the same source");
 
     // ---- Escape inside the preview returns to Interact ----------------------
     await devPage.keyboard.press("Escape");
+    await appPage.getByRole("tab", { name: "Code", exact: true }).click();
     await waitText(appPage, "Browser Connected", 15_000);
+    await appPage.getByRole("tab", { name: "Split", exact: true }).click();
     console.log("  ok  Escape inside the preview exits Inspect mode");
 
     // ---- Ctrl+Shift+C inside the preview toggles Inspect --------------------
     await devPage.keyboard.press("Control+Shift+C");
+    await appPage.getByRole("tab", { name: "Code", exact: true }).click();
     await waitText(appPage, "Inspecting", 15_000);
+    await appPage.getByRole("tab", { name: "Split", exact: true }).click();
     await devPage.keyboard.press("Control+Shift+C");
+    await appPage.getByRole("tab", { name: "Code", exact: true }).click();
     await waitText(appPage, "Browser Connected", 15_000);
+    await appPage.getByRole("tab", { name: "Split", exact: true }).click();
     console.log("  ok  Ctrl+Shift+C toggles Inspect mode from the preview");
 
     // ---- toolbar: navigate / back / forward / reload -------------------------
@@ -277,7 +291,7 @@ async function main() {
     console.log("\nINSTALLED GOLDEN PATH (INTERNAL PREVIEW): PASS");
   } finally {
     writeFileSync(EDIT_TARGET, ORIGINAL_SOURCE, "utf8");
-    await cdp?.close().catch(() => {});
+    await cdp?.close().catch(() => undefined);
     await killApp(appProc);
   }
 }
