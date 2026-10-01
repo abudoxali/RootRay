@@ -74,8 +74,10 @@ async function main() {
     console.log("attached to installed app UI");
 
     // ---- analyze ------------------------------------------------------------
-    await waitText(appPage, "shadow-runner", 60_000).catch(() =>
-      waitText(appPage, "Shadow Runner", 60_000),
+    const pkgName = JSON.parse(readFileSync(join(PROJECT, "package.json"), "utf8")).name;
+    const dirName = PROJECT.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
+    await waitText(appPage, pkgName || dirName, 60_000).catch(() =>
+      waitText(appPage, dirName, 60_000),
     );
     const facts = await appPage.locator(".facts").innerText();
     // Non-React Vite — the generic adapter, not React+Vite.
@@ -190,7 +192,7 @@ async function main() {
 
     console.log("\nINSTALLED SHADOW-RUNNER VERIFICATION (INTERNAL PREVIEW): PASS");
   } finally {
-    await cdp?.close().catch(() => {});
+    await cdp?.close().catch(() => { });
     await killApp(appProc);
   }
 }
