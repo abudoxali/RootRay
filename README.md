@@ -16,16 +16,15 @@ you see, edit what it opens.
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4)](#install-windows)
 [![Built with Tauri](https://img.shields.io/badge/Tauri-2-24C8D8)](https://tauri.app)
 
-[**Download v0.2.0 (latest stable)**](https://github.com/abudoxali/RootRay/releases/latest) ·
+[**Download v0.3.0 (latest stable)**](https://github.com/abudoxali/RootRay/releases/latest) ·
 [**Getting started**](#getting-started) ·
 [**Documentation**](docs/architecture.md)
 
 </div>
 
-> **Status:** `main` is **v0.3.0 development** — the Integrated Browser
-> Workbench described here. The published stable release is
-> **v0.2.0** (universal workspace, external-browser inspection). Download
-> buttons always point at the stable release.
+> **Status:** **v0.3.0 is the published stable release** — the Integrated
+> Browser Workbench described here. Download buttons always point at the
+> stable release.
 
 ## What is RootRay?
 
@@ -227,7 +226,7 @@ pwsh -File scripts/installer-smoke.ps1
 
 ## Roadmap / direction
 
-- **v0.3.0 (in development):** Integrated Browser Workbench — embedded
+- **v0.3.0 (released):** Integrated Browser Workbench — embedded
   Preview, Interact/Inspect, click-to-source in one window, flexible
   panes/focus modes, brand identity.
 - **Later:** runtime adapters for SvelteKit/Astro/Nuxt/Angular/Remotion;

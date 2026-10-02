@@ -2,15 +2,16 @@
 
 ## Current Development
 
-- **Version:** `v0.3.0` (final release candidate; dev suffix removed for publication prep)
+- **Version:** `v0.3.0`
 - **Phase:** Phase 02 — Final Human Acceptance + v0.3.0 Release Preparation
 - **Canonical repository:** `abudoxali/RootRay`
-- **State:** FINAL RELEASE CANDIDATE — READY TO PUBLISH
-- **Published:** NO
-- **Tagged:** NO
-- **Stable release:** `v0.2.0` (see **Current Release** below)
-- **Latest functional state:** Phase 02 installed acceptance complete on the
-  final candidate artifact
+- **State:** PUBLISHED — STABLE
+- **Published:** YES
+- **Tagged:** YES (`v0.3.0` → `07134ad592fa6666361992e4ccfa9d1c157d6e2e`)
+- **Stable release:** `v0.3.0` (see **Current Release** below)
+- **Latest functional state:** Phase 02 installed acceptance complete;
+  v0.3.0 published from the green pre-tag SHA via the tag-triggered
+  Release workflow
 - **Inspect-to-Code:** PASS
 - **Blank editor:** FIXED
 - **Rapid selection stale-read protection:** PASS
@@ -311,6 +312,34 @@ fixed real defects:
 ---
 
 ## Current Release
+**v0.3.0** — Integrated Browser Workbench — **published, stable**
+
+- Release source SHA: `07134ad592fa6666361992e4ccfa9d1c157d6e2e`
+- Annotated tag: `v0.3.0` — "RootRay v0.3.0 — Integrated Browser
+  Workbench"; peels to `07134ad592fa6666361992e4ccfa9d1c157d6e2e`
+  (pushed once, never moved)
+- Pre-tag main CI: run `36944580344` on the release SHA —
+  **completed / success**
+- Tag-triggered Release workflow: run `36945057092` on
+  `refs/tags/v0.3.0` — **completed / success** (frozen install, Biome,
+  typecheck, workspace builds, Vitest, Playwright, Rust tests,
+  Tauri NSIS build, SHA-256 manifest, installer smoke, artifact upload)
+- GitHub Release: https://github.com/abudoxali/RootRay/releases/tag/v0.3.0
+  (non-draft, non-prerelease, latest stable)
+- **Authoritative public installer:** `RootRay_0.3.0_x64-setup.exe` —
+  `4,173,444 bytes`, SHA-256
+  `ebee47faef50d485b227995c4a8ce4c4c39dab06167858c9fd5523f20e5a95e3`,
+  produced by the tag workflow and attached with
+  `RootRay_0.3.0_x64-setup.exe.sha256`
+- **Public verification:** unauthenticated download of both assets →
+  independent SHA-256 == manifest == Actions artifact →
+  `scripts/installer-smoke.ps1` PASS on the exact public binary
+  (silent install → launch → clean exit → silent uninstall)
+- The local `4,198,122`-byte build (`3B3ABA81…`) was the pre-release
+  acceptance candidate; the authoritative public binary is the
+  Actions-produced artifact above.
+
+### Previous stable release — v0.2.0 (unchanged)
 **v0.2.0** — Universal Project Workspace — **published, 100%**
 
 - Tag: `v0.2.0` → `29b9b6751a12893a027a1db4ed956398946e675b`
