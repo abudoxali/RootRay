@@ -6,6 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
+        Before reporting, check the [troubleshooting guide](https://github.com/abudoxali/RootRay/blob/main/docs/troubleshooting.md).
+
         Thanks for reporting. **Never paste secrets, `.env` contents,
         tokens, or private source code** into an issue.
         Security vulnerabilities → [private advisory](https://github.com/abudoxali/RootRay/security/advisories/new), not here.
