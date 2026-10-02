@@ -626,8 +626,9 @@ Re-scanned this cycle with `cargo run -p rootray-core --example scan`:
 
 ### Historical — Full Product Identity + Inspect-to-Code Reliability Pass
 
-(Latest completed pass — produced the current candidate; its gate
-results are the current test counts in **Current Development** above.)
+(Historical pass — produced the candidate current at that time; the
+accepted artifact and gate results now live in **Current Development**
+above.)
 
 - **Stable Release Baseline**: v0.2.0 remains immutable and published. v0.3.0 remains UNPUBLISHED and UNTAGGED.
 - **Inspect-to-Code Reliability**:
@@ -905,11 +906,10 @@ artwork only and no longer appears in any application-icon context.
 ### Historical — Verification and Installer Acceptance
 
 > **Superseded counts/artifacts:** Vitest **191** and Playwright **62**
-> below are historical milestones superseded by the current Vitest
-> **214** / Playwright **66**. The 3,271,995-byte installer
-> (`31dab9fe…`) and earlier binaries below are superseded by the
-> current 4,162,162-byte candidate (`40B6C2F9…`) — see **Current
-> Development**.
+> below are historical milestones superseded by the current counts in
+> **Current Development**. The 3,271,995-byte installer (`31dab9fe…`),
+> the 4,162,162-byte candidate (`40B6C2F9…`) and all earlier binaries
+> below are superseded — see **Current Development**.
 
 **Acceptance caveat (resolved):** the earlier rounds below ran against a
 *manually deployed* binary (the exe copied over the install dir) after

@@ -3,7 +3,7 @@
 All notable changes to RootRay, in [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 style. Dates are UTC. Authoritative detail: [STATUS.md](STATUS.md).
 
-## [Unreleased] — v0.3.0 (development)
+## [0.3.0] — 2026-10-02
 
 ### Added — Integrated Browser Workbench
 
