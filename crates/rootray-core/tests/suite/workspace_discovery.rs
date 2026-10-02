@@ -458,6 +458,98 @@ fn vite_family_detection_is_dependency_driven() {
 }
 
 #[test]
+fn framework_detection_preserves_dependency_version_evidence() {
+    for (spec, expected) in [
+        ("^7.1.0", Some("7.1.0")),
+        ("~7.1.0", Some("7.1.0")),
+        ("workspace:*", None),
+        ("git+https://example.invalid/vite.git", None),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        write(
+            dir.path(),
+            "package.json",
+            &format!(r#"{{"name":"x","devDependencies":{{"vite":"{spec}"}}}}"#),
+        );
+        let a = analyze_workspace(dir.path()).unwrap();
+        let t = target(&a, "root");
+        assert_eq!(t.framework, Framework::Vite, "{spec}");
+        assert_eq!(t.framework_version.as_deref(), expected, "{spec}");
+    }
+}
+
+#[test]
+fn vite_config_plugin_text_is_not_dependency_evidence() {
+    for (deps, expected) in [
+        (r#""vite":"^7""#, Framework::Vite),
+        (
+            r#""vite":"^7","@vitejs/plugin-vue":"^5""#,
+            Framework::VueVite,
+        ),
+        (
+            r#""vite":"^7","react":"^19","@vitejs/plugin-vue":"^5""#,
+            Framework::ViteReact,
+        ),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        write(
+            dir.path(),
+            "package.json",
+            &format!(r#"{{"name":"x","devDependencies":{{{deps}}}}}"#),
+        );
+        write(
+            dir.path(),
+            "vite.config.ts",
+            "import vue from '@vitejs/plugin-vue'; export default { plugins: [vue()] };",
+        );
+        let a = analyze_workspace(dir.path()).unwrap();
+        assert_eq!(target(&a, "root").framework, expected);
+    }
+}
+
+#[test]
+fn meta_framework_precedence_uses_dependencies_and_supported_configs() {
+    for (deps, expected) in [
+        (
+            r#""vite":"^7","react":"^19","astro":"^5""#,
+            Framework::Astro,
+        ),
+        (r#""vite":"^7","astro":"^5","nuxt":"^4""#, Framework::Nuxt),
+        (r#""next":"^16","astro":"^5""#, Framework::NextJs),
+        (r#""react":"^19""#, Framework::Astro),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        write(
+            dir.path(),
+            "package.json",
+            &format!(r#"{{"name":"x","dependencies":{{{deps}}}}}"#),
+        );
+        write(dir.path(), "next.config.js", "module.exports = {};");
+        write(dir.path(), "astro.config.mjs", "export default {};");
+        let a = analyze_workspace(dir.path()).unwrap();
+        assert_eq!(target(&a, "root").framework, expected);
+    }
+}
+
+#[test]
+fn nested_targets_do_not_inherit_the_root_framework() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "package.json",
+        r#"{"name":"ws","workspaces":["apps/*"],"dependencies":{"next":"^16"}}"#,
+    );
+    write(
+        dir.path(),
+        "apps/web/package.json",
+        r#"{"name":"web","dependencies":{"astro":"^5","vite":"^7","react":"^19"}}"#,
+    );
+    let a = analyze_workspace(dir.path()).unwrap();
+    assert_eq!(target(&a, "root").framework, Framework::NextJs);
+    assert_eq!(target(&a, "apps/web").framework, Framework::Astro);
+}
+
+#[test]
 fn vite_project_with_wrapped_script_reports_unavailable_inspection() {
     // `concurrently …` still runs (npm run dev), but the inspector cannot
     // reconstruct it — the capability must say so up front.
