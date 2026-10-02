@@ -3,6 +3,9 @@ contact_links:
   - name: Security vulnerability
     url: https://github.com/abudoxali/RootRay/security/advisories/new
     about: Report exploitable vulnerabilities privately — never in a public issue.
+  - name: Questions & feedback
+    url: https://github.com/abudoxali/RootRay/discussions
+    about: Ask questions, share what worked, or tell us what confused you.
   - name: Documentation
     url: https://github.com/abudoxali/RootRay/blob/main/docs/architecture.md
     about: Architecture, protocol and capability details.

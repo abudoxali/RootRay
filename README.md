@@ -42,6 +42,10 @@ Open Project → Run → app renders in RootRay's Preview
   → Quick Edit → save → HMR / Fast Refresh → keep going
 ```
 
+<p align="center">
+  <img src="docs/media/demo.gif" alt="Real RootRay recording — run the project, inspect a rendered element, its source file opens beside the preview, edit, save, HMR updates the preview" width="860" />
+</p>
+
 ## Why RootRay?
 
 Browser DevTools show you the DOM. Your editor shows you the files.
@@ -71,11 +75,11 @@ The hero above is RootRay brand artwork. The captures below are real
 product screenshots from the desktop app.
 
 <p align="center">
-  <img src="docs/media/workbench-split.png" alt="RootRay workbench — embedded Preview beside source code, Inspector open" width="860" />
+  <img src="docs/media/inspect-source.png" alt="Inspect mode — clicked element maps to its authored source line beside the preview" width="860" />
 </p>
 <p align="center">
+  <img src="docs/media/workbench-split.png" alt="RootRay workbench — embedded Preview beside source code, Inspector open" width="420" />
   <img src="docs/media/home.png" alt="RootRay home — Open a workspace" width="420" />
-  <img src="docs/media/inspect-source.png" alt="Inspect mode — clicked element maps to its authored source line" width="420" />
 </p>
 <p align="center">
   <img src="docs/media/preview-focus.png" alt="Preview Focus — the app fills the workbench while you use it" width="420" />
@@ -83,12 +87,12 @@ product screenshots from the desktop app.
 
 ## Install (Windows)
 
-1. Download `RootRay_0.2.0_x64-setup.exe` and its `.sha256` from the
+1. Download `RootRay_0.3.0_x64-setup.exe` and its `.sha256` from the
    [latest release](https://github.com/abudoxali/RootRay/releases/latest).
 2. Verify the checksum (optional but recommended):
 
    ```powershell
-   Get-FileHash .\RootRay_0.2.0_x64-setup.exe
+   Get-FileHash .\RootRay_0.3.0_x64-setup.exe
    # compare with the hash inside the .sha256 file
    ```
 
@@ -199,9 +203,13 @@ See [SECURITY.md](SECURITY.md) to report a vulnerability.
 Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md),
 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) and the
 [issue templates](.github/ISSUE_TEMPLATE). Bugs and feature requests:
-[GitHub Issues](https://github.com/abudoxali/RootRay/issues).
+[GitHub Issues](https://github.com/abudoxali/RootRay/issues);
+general feedback: [Discussions](https://github.com/abudoxali/RootRay/discussions).
 Milestone/release state: [STATUS.md](STATUS.md) ·
 [CHANGELOG.md](CHANGELOG.md).
+
+Try it on your own project — break it, [open an issue](https://github.com/abudoxali/RootRay/issues/new/choose)
+if it breaks, and star the repo if you want to follow development.
 
 ## Development
 

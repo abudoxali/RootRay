@@ -35,6 +35,16 @@ Describe the product problem and your use case — not a prescribed
 implementation. RootRay's scope is deliberately narrow; the best requests
 explain the workflow gap.
 
+## Finding something to work on
+
+Issues labeled
+[`good first issue`](https://github.com/abudoxali/RootRay/issues?q=label%3A%22good+first+issue%22)
+are scoped for a first contribution — docs, tests, and small isolated
+work with acceptance criteria. Broader efforts are under
+[`help wanted`](https://github.com/abudoxali/RootRay/issues?q=label%3A%22help+wanted%22).
+Questions and workflow ideas belong in
+[Discussions](https://github.com/abudoxali/RootRay/discussions).
+
 ## Development setup
 
 Prerequisites: Windows 10/11, Rust stable (MSVC) + Visual Studio Build
