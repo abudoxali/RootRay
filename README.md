@@ -198,6 +198,11 @@ See [SECURITY.md](SECURITY.md) to report a vulnerability.
   stylesheet file, not the selector line.
 - Unsigned binaries (SmartScreen warning); Windows only.
 
+## Troubleshooting
+
+For installation, project startup, blank Preview or inspection limits, see the
+[troubleshooting guide](docs/troubleshooting.md).
+
 ## Contributing
 
 Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md),
