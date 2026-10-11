@@ -6,7 +6,8 @@
 - **Release evidence:** GitHub's latest stable release is `v0.3.0`, published 2026-10-02. The official `RootRay_0.3.0_x64-setup.exe` digest and its downloaded `.sha256` manifest agree on `ebee47faef50d485b227995c4a8ce4c4c39dab06167858c9fd5523f20e5a95e3`.
 - **Media evidence:** The ABUD page uses the existing hosted RootRay WebP screenshot, approved RootRay brand artwork and v0.3.0 screenshots, plus the existing demo GIF pinned to RootRay `main` commit `dea1906dc4c7f6b55dbad9a3d9709f0691d1eff8`.
 - **Local verification:** ABUD typecheck, lint, 144 tests, and production build passed. Browser checks covered desktop 1440×1000, tablet 768×1024, and mobile 390×844 / 430×932; all media rendered, no horizontal overflow or page errors were observed, reduced-motion used a static screenshot, keyboard focus was visible, and axe reported 0 violations. Captures remain in the ABUD checkout under `test-results/rootray-marketing-m01-verified-*.png`.
-- **Deployment:** The ABUD change is committed locally but not pushed or deployed. Live `https://abud.fun/rootray` is unverified and requires owner approval. Database-backed analytics persistence was not verified against an isolated database; no production database was contacted.
+- **Measurement evidence:** An isolated PostgreSQL container bound to `127.0.0.1:55441` and a fresh Prisma schema verified first-party persistence: the analytics endpoint returned HTTP 202 and stored page-view, download, GitHub, and documentation-click events. The local container was stopped after the check; no production database was contacted.
+- **Deployment:** The ABUD change is committed locally but not pushed or deployed. Live `https://abud.fun/rootray` is unverified and requires owner approval.
 
 ## Current Development
 
