@@ -1,5 +1,13 @@
 # RootRay Status
 
+## Marketing Milestone 01 — ABUD landing page (local implementation)
+
+- **Related ABUD change:** `abudoxali/abud`, branch `feat/rootray-marketing-m01`, commit `0ab754c61955b9480500b4df905809a594246e0a`. This is a website-marketing change; no RootRay application source, release asset, or release tag was changed.
+- **Release evidence:** GitHub's latest stable release is `v0.3.0`, published 2026-10-02. The official `RootRay_0.3.0_x64-setup.exe` digest and its downloaded `.sha256` manifest agree on `ebee47faef50d485b227995c4a8ce4c4c39dab06167858c9fd5523f20e5a95e3`.
+- **Media evidence:** The ABUD page uses the existing hosted RootRay WebP screenshot, approved RootRay brand artwork and v0.3.0 screenshots, plus the existing demo GIF pinned to RootRay `main` commit `dea1906dc4c7f6b55dbad9a3d9709f0691d1eff8`.
+- **Local verification:** ABUD typecheck, lint, 144 tests, and production build passed. Browser checks covered desktop 1440×1000, tablet 768×1024, and mobile 390×844 / 430×932; all media rendered, no horizontal overflow or page errors were observed, reduced-motion used a static screenshot, keyboard focus was visible, and axe reported 0 violations. Captures remain in the ABUD checkout under `test-results/rootray-marketing-m01-verified-*.png`.
+- **Deployment:** The ABUD change is committed locally but not pushed or deployed. Live `https://abud.fun/rootray` is unverified and requires owner approval. Database-backed analytics persistence was not verified against an isolated database; no production database was contacted.
+
 ## Current Development
 
 - **Version:** `v0.3.0`
