@@ -1,5 +1,23 @@
 # RootRay Status
 
+## Workspace Audit & Verification Pass (2026-10-20)
+
+- **Canonical Repository:** `C:\Users\Abud\Desktop\GitHub\RootRay`
+- **Current Branch & HEAD:** `docs/rootray-marketing-m01` @ `0c02a44` (synchronized with `origin/docs/rootray-marketing-m01`)
+- **Remote Connectivity:** Fetch verified against `https://github.com/abudoxali/RootRay.git` (HEAD `dea1906` on `main`).
+- **Live Verification Suite:**
+  - Rust core tests (`cargo test -p rootray-core`): **204 passed**, 0 failed, 1 ignored (requires fixture npm install).
+  - Vitest workspace suites: **103 passed**, 11 test files passed.
+  - Playwright E2E suites (`tests/e2e`): **68 passed** (100%), 0 failed.
+  - TypeScript typecheck (`pnpm -r --if-present typecheck`): **PASS** across all 10 packages.
+  - Biome lint (`biome check .`): **0 errors** (8 descending specificity warnings).
+- **Fixes Applied:**
+  - Rebuilt `apps/desktop` dist bundle (`tsc --noEmit && vite build`), which brought the static distribution in line with the auto-hide pane preferences commit `c7d5001` and ensured 100% green Playwright E2E execution.
+- **Redundant Copies Quarantined / Recycled:**
+  - `RootRay-main`: Verified as an exact clone of `main` commit `dea1906` with no unique uncommitted or tracked changes. Moved safely to Recycle Bin.
+  - `public-verify` & `release-verify`: Consolidated into `_workspace/artifacts/RootRay-v0.3.0-verification` preserving the setup executable (`RootRay_0.3.0_x64-setup.exe`, SHA256 `EBEE47FAEF50D485B227995C4A8CE4C4C39DAB06167858C9FD5523F20E5A95E3`), checksum manifest, test screenshots, and issue draft templates. Redundant standalone directories moved to Recycle Bin.
+- **Verdict:** `COMPLETE CANDIDATE` / `RUNNABLE` (v0.3.0 stable published, all suites green, workspace clean).
+
 ## Marketing Milestone 01 — ABUD landing page (local implementation)
 
 - **Related ABUD change:** `abudoxali/abud`, branch `feat/rootray-marketing-m01`, commit `0ab754c61955b9480500b4df905809a594246e0a`. This is a website-marketing change; no RootRay application source, release asset, or release tag was changed.
