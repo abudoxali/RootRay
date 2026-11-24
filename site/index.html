@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RootRay — استعراض الأداء الشامل | أسرع بيئة لفحص واجهات الويب وربطها بالمصدر</title>
+  
+  <meta name="description" content="RootRay هي أداة ويندوز فائقة السرعة مبنية بلغة Rust و WebView2 لربط واجهة الويب المعروضة مباشرة بأسطر الكود المصدري (file:line:column) بدون أي تأخير وبأقل استهلاك للموارد." />
+  <meta name="keywords" content="RootRay, Performance, Rust, Tauri, WebView2, Windows, Frontend DevTool, React Vite, Next.js, Benchmarks" />
+  <meta name="author" content="Abdallah — ABUD FUN" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="RootRay — Ultra-Fast Windows UI Inspection & Source Mapping" />
+  <meta property="og:description" content="Point at the UI. Reach the source. 175ms startup, 12KB inspector footprint, 2.45MB installer, 100% local-first." />
+  <meta property="og:image" content="assets/brand/rootray-social-preview.png" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="RootRay — Performance Showcase & Benchmarks" />
+  <meta name="twitter:description" content="Point at the UI. Reach the source. 175ms startup, 12KB inspector footprint, 2.45MB installer, 100% local-first." />
+  <meta name="twitter:image" content="assets/brand/rootray-social-preview.png" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/icon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/icon-16.png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Schema.org SoftwareApplication JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "RootRay",
+    "operatingSystem": "Windows 10, Windows 11",
+    "applicationCategory": "DeveloperApplication",
+    "softwareVersion": "0.3.0",
+    "license": "https://opensource.org/licenses/MIT",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "RootRay is a local-first Windows developer tool that maps the rendered web UI back to the source code that produced it."
+  }
+  </script>
+</head>
+<body>
+  <div class="cyber-grid-overlay"></div>
+
+  <div class="page-wrapper">
+    <!-- Navigation Bar -->
+    <header class="site-header">
+      <div class="container nav-container">
+        <a href="#hero" class="brand-link">
+          <img src="assets/brand/rootray-mascot.png" alt="RootRay Mascot" class="brand-logo-img" />
+          <div class="brand-title-wrap">
+            <span class="brand-name">
+              RootRay
+              <span class="brand-badge">v0.3.0 Stable</span>
+            </span>
+            <span class="brand-tagline">SEE THE SOURCE</span>
+          </div>
+        </a>
+
+        <ul class="nav-links">
+          <li class="nav-item">
+            <a href="#benchmarks" data-en="Benchmarks" data-ar="مؤشرات الأداء">مؤشرات الأداء</a>
+          </li>
+          <li class="nav-item">
+            <a href="#simulator" data-en="Interactive Demo" data-ar="المحاكي التفاعلي">المحاكي التفاعلي</a>
+          </li>
+          <li class="nav-item">
+            <a href="#architecture" data-en="Architecture" data-ar="الهندسة المعمارية">الهندسة المعمارية</a>
+          </li>
+          <li class="nav-item">
+            <a href="#compatibility" data-en="Frameworks" data-ar="أطر العمل">أطر العمل</a>
+          </li>
+          <li class="nav-item">
+            <a href="#workflow" data-en="Workflow" data-ar="طريقة العمل">طريقة العمل</a>
+          </li>
+          <li class="nav-item">
+            <a href="#faq" data-en="FAQ" data-ar="الأسئلة الشائعة">الأسئلة الشائعة</a>
+          </li>
+        </ul>
+
+        <div class="nav-actions">
+          <button id="lang-toggle" class="lang-btn" aria-label="Toggle Language">
+            <span>🌐</span>
+            <span id="lang-label">English</span>
+          </button>
+          <a href="#download" class="btn-cta-nav">
+            <span>⚡</span>
+            <span data-en="Download v0.3.0" data-ar="تحميل v0.3.0">تحميل v0.3.0</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero-section">
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-pill-badge">
+            <span class="pulse-indicator"></span>
+            <span data-en="v0.3.0 Published & Verified — Native Rust Engine" data-ar="إصدار v0.3.0 المستقر — محرك Rust أصلي فائق السرعة">إصدار v0.3.0 المستقر — محرك Rust أصلي فائق السرعة</span>
+          </div>
+
+          <h1 class="hero-title">
+            <span data-en="Point at the UI." data-ar="أشر على الواجهة.">أشر على الواجهة.</span>
+            <br />
+            <span class="gradient-text" data-en="Reach the source instantly." data-ar="المس كود المصدر فورًا.">المس كود المصدر فورًا.</span>
+          </h1>
+
+          <p class="hero-subtitle" data-en="RootRay bridges the gap between your rendered browser DOM and the exact file:line:column in your source code. Built with Rust, Tauri, and native WebView2 for zero-lag inspection and an ultra-lightweight footprint." data-ar="أداة ويندوز محلية بالكامل تلغي الفجوة بين ما تراه في المتصفح وبين السطر الفعلي في ملفات مشروعك. مبنية بلغة Rust ومحرك WebView2 لتمنحك أداءً خارقًا دون استهلاك لموارد جهازك وبدون أي سيرفرات سحابية.">
+            أداة ويندوز محلية بالكامل تلغي الفجوة بين ما تراه في المتصفح وبين السطر الفعلي في ملفات مشروعك. مبنية بلغة Rust ومحرك WebView2 لتمنحك أداءً خارقًا دون استهلاك لموارد جهازك وبدون أي سيرفرات سحابية.
+          </p>
+
+          <div class="hero-actions">
+            <a href="#download" class="btn-primary">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span data-en="Download for Windows (2.45 MB)" data-ar="تحميل لويندوز (2.45 ميجابايت)">تحميل لويندوز (2.45 ميجابايت)</span>
+            </a>
+
+            <a href="#simulator" class="btn-secondary">
+              <span>🎯</span>
+              <span data-en="Try Interactive Simulator" data-ar="جرّب المحاكي التفاعلي">جرّب المحاكي التفاعلي</span>
+            </a>
+
+            <a href="https://github.com/abudoxali/RootRay" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              <span>GitHub (Open Source)</span>
+            </a>
+          </div>
+
+          <!-- Hero Media / Visual Mockup -->
+          <div class="hero-visual-wrapper">
+            <div class="hero-visual-inner">
+              <img src="assets/media/workbench-split.png" alt="RootRay Workbench Split View — Embedded WebView2 beside CodeMirror" class="hero-media-img" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stat Strip (Real Performance Numbers) -->
+    <section class="stat-strip-section">
+      <div class="container">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-number">
+              <span id="stat-cold">175</span>
+              <span class="stat-unit">ms</span>
+            </div>
+            <div class="stat-label" data-en="Cold Startup Time" data-ar="سرعة الإقلاع البارد">سرعة الإقلاع البارد</div>
+            <div class="stat-sub" data-en="From click to interactive UI" data-ar="من الضغط حتى جاهزية الواجهة">من الضغط حتى جاهزية الواجهة</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-number">
+              <span>12</span>
+              <span class="stat-unit">KB</span>
+            </div>
+            <div class="stat-label" data-en="In-Page Inspector Payload" data-ar="حجم كود الفحص في الصفحة">حجم كود الفحص في الصفحة</div>
+            <div class="stat-sub" data-en="Zero runtime slowdown" data-ar="صفر تأثير على أداء تطبيقك">صفر تأثير على أداء تطبيقك</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-number">
+              <span>2.45</span>
+              <span class="stat-unit">MB</span>
+            </div>
+            <div class="stat-label" data-en="Installer Package Size" data-ar="حجم ملف التثبيت">حجم ملف التثبيت</div>
+            <div class="stat-sub" data-en="Compared to 150MB+ Electron" data-ar="مقارنة بـ 150MB+ لـ Electron">مقارنة بـ 150MB+ لـ Electron</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-number">
+              <span>0.0</span>
+              <span class="stat-unit">%</span>
+            </div>
+            <div class="stat-label" data-en="Idle CPU Overhead" data-ar="استهلاك المعالج عند الخمول">استهلاك المعالج عند الخمول</div>
+            <div class="stat-sub" data-en="No background polling" data-ar="لا استطلاع مستمر أو إجهاد">لا استطلاع مستمر أو إجهاد</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-number">
+              <span>~1.0</span>
+              <span class="stat-unit">s</span>
+            </div>
+            <div class="stat-label" data-en="8,300 Files Discovery" data-ar="فحص 8,300 ملف">فحص 8,300 ملف</div>
+            <div class="stat-sub" data-en="Parallel Rust filesystem walker" data-ar="مسح متوازي بلغة Rust">مسح متوازي بلغة Rust</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-number">
+              <span>48</span>
+              <span class="stat-unit">MB</span>
+            </div>
+            <div class="stat-label" data-en="Base RAM Footprint" data-ar="استهلاك الذاكرة الأساسي">استهلاك الذاكرة الأساسي</div>
+            <div class="stat-sub" data-en="Single unified process" data-ar="عملية مدمجة شديدة التوفير">عملية مدمجة شديدة التوفير</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Benchmarks Section -->
+    <section id="benchmarks" class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-en="Empirical Benchmarks" data-ar="مقارنات أداء حقيقية وموثقة">مقارنات أداء حقيقية وموثقة</span>
+          <h2 class="section-title" data-en="Engineered for Extreme Speed & Efficiency" data-ar="أداء صُمم ليكون الأسرع والأخف بلا منازع">أداء صُمم ليكون الأسرع والأخف بلا منازع</h2>
+          <p class="section-description" data-en="We benchmarked RootRay v0.3.0 against traditional multi-window stacks (VS Code + Chrome DevTools + Electron tools). All numbers are measured on real Windows machines." data-ar="قمنا بقياس أداء RootRay v0.3.0 الفعلي ومقارنته بالحلول التقليدية (محرر منفصل + متصفح + أدوات مبنية على Electron). كل الأرقام مستخرجة من بيئات تشغيل واختبار حقيقية.">
+            قمنا بقياس أداء RootRay v0.3.0 الفعلي ومقارنته بالحلول التقليدية (محرر منفصل + متصفح + أدوات مبنية على Electron). كل الأرقام مستخرجة من بيئات تشغيل واختبار حقيقية.
+          </p>
+        </div>
+
+        <div class="benchmark-container">
+          <div class="benchmark-tabs">
+            <button class="bench-tab-btn active" data-metric="installer" data-en="Installer Size" data-ar="حجم التثبيت">حجم التثبيت</button>
+            <button class="bench-tab-btn" data-metric="startup" data-en="Startup Speed" data-ar="سرعة الإقلاع">سرعة الإقلاع</button>
+            <button class="bench-tab-btn" data-metric="memory" data-en="Memory / RAM" data-ar="استهلاك الذاكرة">استهلاك الذاكرة</button>
+            <button class="bench-tab-btn" data-metric="inspector" data-en="In-Page Overhead" data-ar="حمولة الفحص">حمولة الفحص</button>
+            <button class="bench-tab-btn" data-metric="discovery" data-en="Project Discovery" data-ar="فحص المشاريع">فحص المشاريع</button>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 2rem;">
+            <h3 id="bench-metric-title" style="font-size: 1.4rem; color: #fff; margin-bottom: 0.35rem;">Installer / Download Size</h3>
+            <p id="bench-metric-desc" style="font-size: 0.95rem; color: var(--rr-text-secondary);">Ultra-compact native packaging vs bloated Electron runtimes.</p>
+          </div>
+
+          <div id="bench-card-list" class="benchmark-card-list">
+            <!-- Dynamic Benchmark Rows populated by app.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Workbench Simulator -->
+    <section id="simulator" class="section" style="background: rgba(13, 18, 27, 0.4);">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-en="Interactive Simulation" data-ar="محاكي تفاعلي حي">محاكي تفاعلي حي</span>
+          <h2 class="section-title" data-en="Experience Click-to-Source in Action" data-ar="جرّب الانتقال المباشر من الواجهة إلى الكود">جرّب الانتقال المباشر من الواجهة إلى الكود</h2>
+          <p class="section-description" data-en="Click any element in the simulated Preview on the left. Watch RootRay instantly trace the exact authored TSX file, line, and component in the Code pane on the right." data-ar="اضغط على أي عنصر في شاشة المعاينة على اليمين وشاهد كيف يقوم RootRay فورًا بربط العنصر بملفه وسطره الدقيق داخل محرر الكود في ثوانٍ معدودة وبدون أي تخمين.">
+            اضغط على أي عنصر في شاشة المعاينة على اليمين وشاهد كيف يقوم RootRay فورًا بربط العنصر بملفه وسطره الدقيق داخل محرر الكود في ثوانٍ معدودة وبدون أي تخمين.
+          </p>
+        </div>
+
+        <div class="simulator-container">
+          <div class="simulator-window-bar">
+            <div class="window-dots">
+              <span class="window-dot dot-red"></span>
+              <span class="window-dot dot-yellow"></span>
+              <span class="window-dot dot-green"></span>
+            </div>
+            <div class="window-title">RootRay Workbench — [ClientFlow CRM / React + Vite]</div>
+            <div class="simulator-mode-pills">
+              <span class="sim-mode-btn active">Inspect (Ctrl+Shift+C)</span>
+              <span class="sim-mode-btn">Interact</span>
+            </div>
+          </div>
+
+          <div class="simulator-body">
+            <!-- Simulated Preview (Left in LTR, Right in RTL) -->
+            <div class="sim-preview-pane">
+              <div class="sim-pane-header">
+                <span class="sim-pane-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 12 8"></polygon></svg>
+                  <span data-en="Embedded WebView2 Preview" data-ar="معاينة WebView2 المدمجة">معاينة WebView2 المدمجة</span>
+                </span>
+                <span class="sim-url-pill">http://localhost:5173/dashboard</span>
+              </div>
+
+              <div class="sim-sample-app">
+                <p style="font-size: 0.76rem; color: var(--rr-orange-bright); font-weight: 700;" data-en="👉 CLICK ANY ELEMENT BELOW TO INSPECT:" data-ar="👉 اضغط على أي عنصر بالأسفل لتجربة الفحص الفوري:">👉 اضغط على أي عنصر بالأسفل لتجربة الفحص الفوري:</p>
+
+                <!-- Target 1: CTA Button -->
+                <div class="sample-ui-card active-target" data-target="button">
+                  <div class="sample-card-title">&lt;CTAButton /&gt;</div>
+                  <div class="sample-card-desc" data-en="Click to open CTAButton.tsx at Line 14" data-ar="اضغط لفتح ملف CTAButton.tsx عند السطر 14">اضغط لفتح ملف CTAButton.tsx عند السطر 14</div>
+                  <button class="sample-ui-btn">Upgrade Plan →</button>
+                </div>
+
+                <!-- Target 2: Metric Card -->
+                <div class="sample-ui-card" data-target="metric">
+                  <div class="sample-card-title">&lt;PerformanceMetricCard /&gt;</div>
+                  <div class="sample-card-desc" data-en="Click to open PerformanceMetricCard.tsx at Line 28" data-ar="اضغط لفتح PerformanceMetricCard.tsx عند السطر 28">اضغط لفتح PerformanceMetricCard.tsx عند السطر 28</div>
+                  <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-top: 0.4rem;">+99.4% Latency Drop</div>
+                </div>
+
+                <!-- Target 3: Header -->
+                <div class="sample-ui-card" data-target="header">
+                  <div class="sample-card-title">&lt;ProjectHeader /&gt;</div>
+                  <div class="sample-card-desc" data-en="Click to open ProjectHeader.tsx at Line 8" data-ar="اضغط لفتح ProjectHeader.tsx عند السطر 8">اضغط لفتح ProjectHeader.tsx عند السطر 8</div>
+                  <div style="font-size: 0.85rem; color: #7ee787; font-weight: 600; margin-top: 0.3rem;">● Dashboard / Live Analytics</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Simulated Code Editor (Right in LTR, Left in RTL) -->
+            <div class="sim-code-pane">
+              <div class="sim-pane-header">
+                <span class="sim-pane-label" style="color: var(--rr-cyan);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                  <span data-en="Lazy CodeMirror Editor" data-ar="محرر كود CodeMirror المدمج">محرر كود CodeMirror المدمج</span>
+                </span>
+                <span id="ins-file" class="sim-url-pill" style="color: var(--rr-orange-bright);">src/components/CTAButton.tsx</span>
+              </div>
+
+              <div id="sim-code-editor" class="sim-code-editor">
+                <!-- Dynamically updated by app.js -->
+              </div>
+
+              <!-- Inspector Metadata Strip -->
+              <div class="sim-inspector-box">
+                <div class="inspector-meta-row">
+                  <span class="ins-label" data-en="Owning Component:" data-ar="المكون البرمجي:">المكون البرمجي:</span>
+                  <span id="ins-component" class="ins-val">CTAButton</span>
+                </div>
+                <div class="inspector-meta-row">
+                  <span class="ins-label" data-en="Source Location:" data-ar="المكان بالمصدر:">المكان بالمصدر:</span>
+                  <span id="ins-location" class="ins-val">L14 : C8</span>
+                </div>
+                <div class="inspector-meta-row">
+                  <span class="ins-label" data-en="Rendered DOM:" data-ar="عنصر DOM:">عنصر DOM:</span>
+                  <span id="ins-tag" class="ins-val">button.btn-primary</span>
+                </div>
+                <div class="inspector-meta-row">
+                  <span class="ins-label" data-en="Matched Styles:" data-ar="التنسيقات المحسوبة:">التنسيقات المحسوبة:</span>
+                  <span id="ins-styles" class="ins-val">display: inline-flex; background: #ff7a18;</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Deep Architecture & Security Section -->
+    <section id="architecture" class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-en="Native Engineering" data-ar="هندسة برمجية صارمة">هندسة برمجية صارمة</span>
+          <h2 class="section-title" data-en="Local-First, Secure, Zero-Compromise" data-ar="محلية 100%، آمنة ومصممة بأعلى معايير الحماية">محلية 100%، آمنة ومصممة بأعلى معايير الحماية</h2>
+          <p class="section-description" data-en="RootRay does not rely on cloud services, external servers, or telemetric tracking. Everything executes on your machine with strict privilege separation." data-ar="لا يعتمد RootRay على أي خدمات سحابية أو جمع لبياناتك. كل شيء يُدار محليًا على جهازك مع فصل كامل للصلاحيات لضمان أمان نظامك ومشاريعك.">
+            لا يعتمد RootRay على أي خدمات سحابية أو جمع لبياناتك. كل شيء يُدار محليًا على جهازك مع فصل كامل للصلاحيات لضمان أمان نظامك ومشاريعك.
+          </p>
+        </div>
+
+        <div class="arch-grid">
+          <!-- Card 1 -->
+          <div class="arch-card">
+            <div class="arch-icon">🛡️</div>
+            <h3 class="arch-title" data-en="Dual-Webview Sandbox" data-ar="عزل تام لنافذة المعاينة">عزل تام لنافذة المعاينة</h3>
+            <p class="arch-desc" data-en="The Preview is an isolated child WebView2 with ZERO IPC permissions. It cannot execute Tauri commands or access your filesystem. Main-frame navigation is loopback-only." data-ar="نافذة المعاينة عبارة عن سطح WebView2 معزول تمامًا بصلاحيات IPC منعدمة. لا يمكنه قراءة ملفاتك أو تشغيل أوامر النظام، والتصفح مقصور على السيرفر المحلي.">
+              نافذة المعاينة عبارة عن سطح WebView2 معزول تمامًا بصلاحيات IPC منعدمة. لا يمكنه قراءة ملفاتك أو تشغيل أوامر النظام، والتصفح مقصور على السيرفر المحلي.
+            </p>
+            <span class="arch-tag">ZERO_IPC_PRIVILEGE</span>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="arch-card">
+            <div class="arch-icon">⚡</div>
+            <h3 class="arch-title" data-en="Windows Job Object Containment" data-ar="احتواء العمليات بنظام Windows">احتواء العمليات بنظام Windows</h3>
+            <p class="arch-desc" data-en="Every dev server process is assigned to a Windows Job Object with KILL_ON_JOB_CLOSE. Closing RootRay cleanly terminates all child Node/Vite processes with zero orphaned ports." data-ar="يتم تشغيل سيرفرات التطوير داخل Windows Job Object مزود بخاصية الإنهاء الفوري عند الإغلاق، مما يضمن عدم بقاء أي عمليات معلقة تستهلك المنافذ أو الذاكرة.">
+              يتم تشغيل سيرفرات التطوير داخل Windows Job Object مزود بخاصية الإنهاء الفوري عند الإغلاق، مما يضمن عدم بقاء أي عمليات معلقة تستهلك المنافذ أو الذاكرة.
+            </p>
+            <span class="arch-tag">KILL_ON_JOB_CLOSE</span>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="arch-card">
+            <div class="arch-icon">🔒</div>
+            <h3 class="arch-title" data-en="Ephemeral Loopback WS Bridge" data-ar="جسر اتصال محلي مؤمن">جسر اتصال محلي مؤمن</h3>
+            <p class="arch-desc" data-en="In-page inspector communicates with the desktop shell over a dynamic 127.0.0.1 WebSocket with an ephemeral per-session token. Unauthorized requests are instantly dropped." data-ar="يتواصل كود الفحص مع التطبيق عبر منفذ WebSocket محلي عشوائي مع توكن أمان مؤقت لكل جلسة، ويتم رفض أي رسالة غير مطابقة للمواصفات فورًا.">
+              يتواصل كود الفحص مع التطبيق عبر منفذ WebSocket محلي عشوائي مع توكن أمان مؤقت لكل جلسة، ويتم رفض أي رسالة غير مطابقة للمواصفات فورًا.
+            </p>
+            <span class="arch-tag">127.0.0.1 DYNAMIC WS</span>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="arch-card">
+            <div class="arch-icon">💾</div>
+            <h3 class="arch-title" data-en="Guarded Atomic Saves" data-ar="حفظ ذري محمي من التعارض">حفظ ذري محمي من التعارض</h3>
+            <p class="arch-desc" data-en="Quick Edit verifies file integrity using SHA-256 optimistic concurrency and writes to a same-directory temp file with fsync before atomic rename. Never overwrites external edits." data-ar="تعتمد ميزة التعديل السريع على فحص هاش SHA-256 للتأكد من عدم تعديل الملف خارجيًا، مع حفظ ذري يمنع تلف الملفات أو استبدال التعديلات بالخطأ.">
+              تعتمد ميزة التعديل السريع على فحص هاش SHA-256 للتأكد من عدم تعديل الملف خارجيًا، مع حفظ ذري يمنع تلف الملفات أو استبدال التعديلات بالخطأ.
+            </p>
+            <span class="arch-tag">SHA-256 CONCURRENCY</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Supported Stacks Section -->
+    <section id="compatibility" class="section" style="background: rgba(13, 18, 27, 0.4);">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-en="Honest Matrix" data-ar="مصفوفة التوافق الصريحة">مصفوفة التوافق الصريحة</span>
+          <h2 class="section-title" data-en="Supported Frameworks & Capabilities" data-ar="أطر العمل المدعومة والقدرات المتاحة">أطر العمل المدعومة والقدرات المتاحة</h2>
+          <p class="section-description" data-en="RootRay tells the truth about what it can prove. We never fabricate component locations or claim unsupported adapters." data-ar="يتميز RootRay بالشفافية الكاملة: نعرض ما يمكن إثباته برمجياً دون ادعاء دعم أطر غير مطبقة أو تخمين أماكن عشوائية للمكونات.">
+            يتميز RootRay بالشفافية الكاملة: نعرض ما يمكن إثباته برمجياً دون ادعاء دعم أطر غير مطبقة أو تخمين أماكن عشوائية للمكونات.
+          </p>
+        </div>
+
+        <div class="table-responsive">
+          <table class="compat-table">
+            <thead>
+              <tr>
+                <th data-en="Stack / Framework" data-ar="إطار العمل / البيئة">إطار العمل / البيئة</th>
+                <th data-en="Run Status" data-ar="حالة التشغيل">حالة التشغيل</th>
+                <th data-en="Inspection & Source Mapping" data-ar="الفحص ومطابقة المصدر">الفحص ومطابقة المصدر</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="stack-name">React + Vite</td>
+                <td><span class="status-badge badge-green">✓ Full Runner</span></td>
+                <td data-en="Exact JSX file:line:col mapping, component hierarchy, caller intelligence, HMR." data-ar="مطابقة كاملة لسطر وملف الـ JSX، معلومات المكونات، وتحديث فوري عبر HMR.">مطابقة كاملة لسطر وملف الـ JSX، معلومات المكونات، وتحديث فوري عبر HMR.</td>
+              </tr>
+              <tr>
+                <td class="stack-name">Next.js (App / Pages Router)</td>
+                <td><span class="status-badge badge-green">✓ Supported next dev</span></td>
+                <td data-en="Full authored JSX mapping in documented Turbopack & webpack dev paths, Fast Refresh." data-ar="مطابقة كاملة لكود الـ JSX مع مسارات Turbopack و Webpack والتحديث السريع.">مطابقة كاملة لكود الـ JSX مع مسارات Turbopack و Webpack والتحديث السريع.</td>
+              </tr>
+              <tr>
+                <td class="stack-name">Vite (Vue, Svelte, Vanilla)</td>
+                <td><span class="status-badge badge-blue">✓ Vite Target</span></td>
+                <td data-en="Generic DOM inspection + exact mapping for authored index.html. No fabricated component tree." data-ar="فحص DOM عام ومطابقة دقيقة لملف index.html دون اختراع مواقع وهمية للمكونات.">فحص DOM عام ومطابقة دقيقة لملف index.html دون اختراع مواقع وهمية للمكونات.</td>
+              </tr>
+              <tr>
+                <td class="stack-name">Static Web (HTML / CSS / JS)</td>
+                <td><span class="status-badge badge-green">✓ Built-in Server</span></td>
+                <td data-en="Built-in loopback server with SSE auto-reload on save and exact authored HTML mapping." data-ar="سيرفر محلي مدمج فائق السرعة مع إعادة تحميل تلقائي عبر SSE ومطابقة للـ HTML.">سيرفر محلي مدمج فائق السرعة مع إعادة تحميل تلقائي عبر SSE ومطابقة للـ HTML.</td>
+              </tr>
+              <tr>
+                <td class="stack-name">SvelteKit / Astro / Nuxt / Angular</td>
+                <td><span class="status-badge badge-amber">○ Declared Script</span></td>
+                <td data-en="Runs your script cleanly; no adapter yet. Limitations are honestly stated." data-ar="يشغل السكربت الخاص بك بكفاءة؛ لا يوجد adapter مخصص بعد ويتم توضيح ذلك بصدق.">يشغل السكربت الخاص بك بكفاءة؛ لا يوجد adapter مخصص بعد ويتم توضيح ذلك بصدق.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8-Step Developer Workflow -->
+    <section id="workflow" class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-en="Seamless Flow" data-ar="مسار العمل السلس">مسار العمل السلس</span>
+          <h2 class="section-title" data-en="How RootRay Accelerates Your Day" data-ar="كيف يختصر RootRay وقتك أثناء التطوير">كيف يختصر RootRay وقتك أثناء التطوير</h2>
+          <p class="section-description" data-en="From launching a project to verifying hot reload updates in a single desktop window." data-ar="من فتح المجلد إلى تعديل الكود ورؤية التحديثات لحظياً في نافذة واحدة مريحة.">
+            من فتح المجلد إلى تعديل الكود ورؤية التحديثات لحظياً في نافذة واحدة مريحة.
+          </p>
+        </div>
+
+        <div class="workflow-track">
+          <div class="workflow-step">
+            <div class="step-num">01</div>
+            <div class="step-title" data-en="Open Project" data-ar="افتح المشروع">افتح المشروع</div>
+            <div class="step-desc" data-en="Bounded discovery detects framework and targets without running arbitrary code." data-ar="فحص محلي سريع يكتشف هيكل المشروع ونوعه دون تشغيل أي كود غير مصرح.">فحص محلي سريع يكتشف هيكل المشروع ونوعه دون تشغيل أي كود غير مصرح.</div>
+          </div>
+
+          <div class="workflow-step">
+            <div class="step-num">02</div>
+            <div class="step-title" data-en="Run Target" data-ar="شغّل السيرفر">شغّل السيرفر</div>
+            <div class="step-desc" data-en="Launch your dev server inside RootRay's Job Object when you press Run." data-ar="ابدأ تشغيل السيرفر باختيارك وتحت سيطرتك التامة دون تشغيل تلقائي مزعج.">ابدأ تشغيل السيرفر باختيارك وتحت سيطرتك التامة دون تشغيل تلقائي مزعج.</div>
+          </div>
+
+          <div class="workflow-step">
+            <div class="step-num">03</div>
+            <div class="step-title" data-en="Embedded Preview" data-ar="عاين مباشرة">عاين مباشرة</div>
+            <div class="step-desc" data-en="Interact with your running app inside the isolated WebView2 child pane." data-ar="تصفح تطبيقك داخل نافذة المعاينة المدمجة وكأنك داخل متصفح حقيقي.">تصفح تطبيقك داخل نافذة المعاينة المدمجة وكأنك داخل متصفح حقيقي.</div>
+          </div>
+
+          <div class="workflow-step">
+            <div class="step-num">04</div>
+            <div class="step-title" data-en="Inspect Element" data-ar="افحص العنصر">افحص العنصر</div>
+            <div class="step-desc" data-en="Press Ctrl+Shift+C and click any rendered element on screen." data-ar="اضغط اختصار الفحص واضغط على أي زر أو بطاقة أو نص معروض أمامك.">اضغط اختصار الفحص واضغط على أي زر أو بطاقة أو نص معروض أمامك.</div>
+          </div>
+
+          <div class="workflow-step">
+            <div class="step-num">05</div>
+            <div class="step-title" data-en="Source Reveal" data-ar="الوصول للمصدر">الوصول للمصدر</div>
+            <div class="step-desc" data-en="RootRay instantly opens the exact file:line:col beside the preview." data-ar="يفتح السطر الدقيق في الكود بجانب المعاينة مع تحديد المكون البرمجي.">يفتح السطر الدقيق في الكود بجانب المعاينة مع تحديد المكون البرمجي.</div>
+          </div>
+
+          <div class="workflow-step">
+            <div class="step-num">06</div>
+            <div class="step-title" data-en="Quick Edit" data-ar="تعديل سريع">تعديل سريع</div>
+            <div class="step-desc" data-en="Make your changes directly inside the integrated CodeMirror editor." data-ar="أجرِ تعديلك مباشرة في محرر الكود المدمج دون الحاجة للتبديل بين النوافذ.">أجرِ تعديلك مباشرة في محرر الكود المدمج دون الحاجة للتبديل بين النوافذ.</div>
+          </div>
+
+          <div class="workflow-step">
+            <div class="step-num">07</div>
+            <div class="step-title" data-en="Guarded Save" data-ar="حفظ محمي">حفظ محمي</div>
+            <div class="step-desc" data-en="SHA-256 hash checks ensure no external edits are accidentally clobbered." data-ar="حفظ ذري مدعوم بفحص الهاش يمنع أي تعارضات غير مقصودة مع ملفاتك.">حفظ ذري مدعوم بفحص الهاش يمنع أي تعارضات غير مقصودة مع ملفاتك.</div>
+          </div>
+
+          <div class="workflow-step">
+            <div class="step-num">08</div>
+            <div class="step-title" data-en="Hot Refresh" data-ar="تحديث لحظي">تحديث لحظي</div>
+            <div class="step-desc" data-en="Watch Vite HMR or Next.js Fast Refresh update the Preview in place." data-ar="شاهد تحديث HMR ينعكس على الفور في شاشة المعاينة وواصل عملك بسلاسة.">شاهد تحديث HMR ينعكس على الفور في شاشة المعاينة وواصل عملك بسلاسة.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download & Verification Section -->
+    <section id="download" class="section">
+      <div class="container">
+        <div class="download-box">
+          <h2 class="download-title" data-en="Get RootRay for Windows" data-ar="حمّل RootRay لنظام ويندوز">حمّل RootRay لنظام ويندوز</h2>
+          <p class="download-sub" data-en="Version 0.3.0 is the official stable release. Free, open source (MIT), and installs in seconds without administrator privileges." data-ar="الإصدار 0.3.0 هو الإصدار المستقر المعتمد. مجاني، مفتوح المصدر (MIT)، ويثبت في ثوانٍ بدون الحاجة لصلاحيات المدير.">
+            الإصدار 0.3.0 هو الإصدار المستقر المعتمد. مجاني، مفتوح المصدر (MIT)، ويثبت في ثوانٍ بدون الحاجة لصلاحيات المدير.
+          </p>
+
+          <div class="download-meta-strip">
+            <span class="meta-item">
+              <span data-en="Release:" data-ar="الإصدار:">الإصدار:</span>
+              <span class="meta-val">v0.3.0 Stable</span>
+            </span>
+            <span class="meta-item">
+              <span data-en="Platform:" data-ar="النظام:">النظام:</span>
+              <span class="meta-val">Windows 10 / 11 (x64)</span>
+            </span>
+            <span class="meta-item">
+              <span data-en="Size:" data-ar="الحجم:">الحجم:</span>
+              <span class="meta-val">2.45 MB (NSIS)</span>
+            </span>
+            <span class="meta-item">
+              <span data-en="License:" data-ar="الترخيص:">الترخيص:</span>
+              <span class="meta-val">MIT Open Source</span>
+            </span>
+          </div>
+
+          <a href="https://github.com/abudoxali/RootRay/releases/download/v0.3.0/RootRay_0.3.0_x64-setup.exe" class="btn-primary" style="display: inline-flex; font-size: 1.15rem; padding: 1rem 2.5rem;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span data-en="Download RootRay_0.3.0_x64-setup.exe" data-ar="تحميل RootRay_0.3.0_x64-setup.exe">تحميل RootRay_0.3.0_x64-setup.exe</span>
+          </a>
+
+          <!-- Checksum Verification Card -->
+          <div class="checksum-block">
+            <div class="checksum-header">
+              <span data-en="Official SHA-256 Checksum:" data-ar="كود التحقق الرسمي (SHA-256):">كود التحقق الرسمي (SHA-256):</span>
+              <button id="btn-copy-hash" class="btn-copy-hash" data-en="Copy Hash" data-ar="نسخ الهاش">نسخ الهاش</button>
+            </div>
+            <div class="checksum-code">
+              ebee47faef50d485b227995c4a8ce4c4c39dab06167858c9fd5523f20e5a95e3
+            </div>
+
+            <div class="checksum-header" style="margin-top: 1rem;">
+              <span data-en="Verify via PowerShell:" data-ar="أمر التحقق عبر PowerShell:">أمر التحقق عبر PowerShell:</span>
+              <button id="btn-copy-ps" class="btn-copy-hash" data-en="Copy Command" data-ar="نسخ الأمر">نسخ الأمر</button>
+            </div>
+            <div class="checksum-code" style="color: var(--rr-cyan);">
+              Get-FileHash .\RootRay_0.3.0_x64-setup.exe -Algorithm SHA256
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="section" style="background: rgba(13, 18, 27, 0.4);">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-en="Clarifications" data-ar="إجابات وتوضيحات">إجابات وتوضيحات</span>
+          <h2 class="section-title" data-en="Frequently Asked Questions" data-ar="الأسئلة الأكثر شيوعًا">الأسئلة الأكثر شيوعًا</h2>
+          <p class="section-description" data-en="Everything you need to know about RootRay, its privacy model, and runtime requirements." data-ar="كل ما تود معرفته عن طريقة عمل RootRay، الخصوصية ومتطلبات التشغيل.">
+            كل ما تود معرفته عن طريقة عمل RootRay، الخصوصية ومتطلبات التشغيل.
+          </p>
+        </div>
+
+        <div class="faq-list">
+          <div class="faq-item">
+            <button class="faq-question">
+              <span data-en="Does RootRay upload my project or require an account?" data-ar="هل يقوم RootRay برفع مشروعي أو يحتاج إلى حساب؟">هل يقوم RootRay برفع مشروعي أو يحتاج إلى حساب؟</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer" data-en="No. RootRay is 100% local-first. There is no account, no backend cloud, and zero telemetry collected. Project discovery and editing happen entirely on your computer." data-ar="لا على الإطلاق. RootRay محلي بنسبة 100%. لا يحتاج حسابًا، ولا يتصل بأي سحابة، ولا يجمع أي بيانات تتبع (Telemetry). اكتشاف المشاريع وتعديلها يتم بالكامل داخل جهازك.">
+              لا على الإطلاق. RootRay محلي بنسبة 100%. لا يحتاج حسابًا، ولا يتصل بأي سحابة، ولا يجمع أي بيانات تتبع (Telemetry). اكتشاف المشاريع وتعديلها يتم بالكامل داخل جهازك.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span data-en="Why does the installer warn with Windows SmartScreen?" data-ar="لماذا قد يظهر تنبيه SmartScreen عند تشغيل مثبت البرنامج؟">لماذا قد يظهر تنبيه SmartScreen عند تشغيل مثبت البرنامج؟</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer" data-en="The current release binary is open-source and verified, but not yet digitally signed with an expensive enterprise certificate. You can verify the published SHA-256 checksum to ensure file integrity, then click 'More info → Run anyway'." data-ar="البرنامج مجاني ومفتوح المصدر بالكامل لكنه لم يحصل بعد على شهادة توقيع رقمية تجارية مدفوعة. يمكنك التحقق من صحة الملف بمطابقة هاش SHA-256 المنشور ثم الضغط على 'More info → Run anyway'.">
+              البرنامج مجاني ومفتوح المصدر بالكامل لكنه لم يحصل بعد على شهادة توقيع رقمية تجارية مدفوعة. يمكنك التحقق من صحة الملف بمطابقة هاش SHA-256 المنشور ثم الضغط على 'More info → Run anyway'.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span data-en="Does RootRay require Node.js to be installed?" data-ar="هل يحتاج RootRay نفسه إلى تثبيت Node.js؟">هل يحتاج RootRay نفسه إلى تثبيت Node.js؟</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer" data-en="RootRay itself is a compiled native Rust binary and does NOT require Node.js. However, if your web project uses a dev server like Vite or Next.js, that project naturally requires its own Node and package manager on your system PATH." data-ar="برنامج RootRay نفسه مبني بلغة Rust ولا يحتاج إلى Node.js ليعمل. ولكن إذا كان مشروع الويب الخاص بك يعتمد على Vite أو Next.js، فيجب أن يكون Node.js متوفرًا على جهازك لتشغيل سيرفر التطوير.">
+              برنامج RootRay نفسه مبني بلغة Rust ولا يحتاج إلى Node.js ليعمل. ولكن إذا كان مشروع الويب الخاص بك يعتمد على Vite أو Next.js، فيجب أن يكون Node.js متوفرًا على جهازك لتشغيل سيرفر التطوير.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span data-en="Does RootRay rewrite or alter my project config files?" data-ar="هل يقوم RootRay بتعديل ملفات إعدادات مشروعي؟">هل يقوم RootRay بتعديل ملفات إعدادات مشروعي؟</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer" data-en="No. RootRay never touches or rewrites your package.json, vite.config.ts, or source files for instrumentation. All inspection hooks are passed in-memory during runner execution." data-ar="أبدًا. لا يقوم RootRay بإعادة كتابة أي ملف من ملفات الإعدادات في مشروعك. يتم تمرير أدوات الفحص ديناميكيًا في الذاكرة أثناء بدء السيرفر فقط.">
+              أبدًا. لا يقوم RootRay بإعادة كتابة أي ملف من ملفات الإعدادات في مشروعك. يتم تمرير أدوات الفحص ديناميكيًا في الذاكرة أثناء بدء السيرفر فقط.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div>
+            <div class="brand-link" style="margin-bottom: 0.8rem;">
+              <img src="assets/brand/rootray-mascot.png" alt="RootRay" class="brand-logo-img" />
+              <span class="brand-name">RootRay</span>
+            </div>
+            <p class="footer-brand-desc" data-en="Point at the UI. Reach the source. The high-performance local-first developer workbench for Windows." data-ar="أشر على الواجهة. المس كود المصدر فورًا. بيئة العمل المحلية فائقة السرعة للمطورين على ويندوز.">
+              أشر على الواجهة. المس كود المصدر فورًا. بيئة العمل المحلية فائقة السرعة للمطورين على ويندوز.
+            </p>
+          </div>
+
+          <div>
+            <h4 class="footer-col-title" data-en="Navigation" data-ar="روابط سريعة">روابط سريعة</h4>
+            <ul class="footer-links">
+              <li><a href="#benchmarks" data-en="Benchmarks" data-ar="مؤشرات الأداء">مؤشرات الأداء</a></li>
+              <li><a href="#simulator" data-en="Interactive Demo" data-ar="المحاكي التفاعلي">المحاكي التفاعلي</a></li>
+              <li><a href="#architecture" data-en="Architecture" data-ar="الهندسة المعمارية">الهندسة المعمارية</a></li>
+              <li><a href="#download" data-en="Download v0.3.0" data-ar="تحميل v0.3.0">تحميل v0.3.0</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="footer-col-title" data-en="Documentation" data-ar="التوثيق والمصدر">التوثيق والمصدر</h4>
+            <ul class="footer-links">
+              <li><a href="https://github.com/abudoxali/RootRay/blob/main/docs/architecture.md" target="_blank" rel="noopener noreferrer">Architecture Spec</a></li>
+              <li><a href="https://github.com/abudoxali/RootRay/blob/main/docs/troubleshooting.md" target="_blank" rel="noopener noreferrer">Troubleshooting</a></li>
+              <li><a href="https://github.com/abudoxali/RootRay/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Security Policy</a></li>
+              <li><a href="https://github.com/abudoxali/RootRay/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">Changelog</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="footer-col-title" data-en="Ecosystem" data-ar="المنظومة">المنظومة</h4>
+            <ul class="footer-links">
+              <li><a href="https://github.com/abudoxali/RootRay" target="_blank" rel="noopener noreferrer">GitHub Repository</a></li>
+              <li><a href="https://github.com/abudoxali/RootRay/releases" target="_blank" rel="noopener noreferrer">Releases & Hashes</a></li>
+              <li><a href="https://abud.fun" target="_blank" rel="noopener noreferrer">ABUD Studio</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <div>
+            © 2026 Abdallah — ABUD FUN. Released under the <a href="https://github.com/abudoxali/RootRay/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>.
+          </div>
+          <div style="color: var(--rr-text-muted);">
+            Engineered with Rust, Tauri 2, and WebView2.
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
